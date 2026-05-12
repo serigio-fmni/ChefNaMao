@@ -1,0 +1,253 @@
+import React from 'react';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Image } from 'expo-image';
+import { MaterialIcons } from '@expo/vector-icons';
+import { Recipe } from '../../constants/data';
+import { Colors, Typography, Spacing, Radius, Shadows } from '../../constants/theme';
+import { useApp } from '../../hooks/useApp';
+
+interface RecipeCardProps {
+  recipe: Recipe;
+  onPress: () => void;
+  compact?: boolean;
+}
+
+const DIFFICULTY_LABELS = {
+  facil: 'Fácil',
+  medio: 'Médio',
+  dificil: 'Difícil',
+};
+
+const DIFFICULTY_COLORS = {
+  facil: Colors.success,
+  medio: Colors.warning,
+  dificil: Colors.error,
+};
+
+export function RecipeCard({ recipe, onPress, compact = false }: RecipeCardProps) {
+  const { isRecipeSaved, saveRecipe, removeRecipe, profile } = useApp();
+  const saved = isRecipeSaved(recipe.id);
+  const isLocked = recipe.isPremium && !profile.isPremium;
+
+  const handleSave = (e: any) => {
+    e.stopPropagation();
+    if (isLocked) return;
+    if (saved) removeRecipe(recipe.id);
+    else saveRecipe(recipe);
+  };
+
+  if (compact) {
+    return (
+      <TouchableOpacity style={styles.compactCard} onPress={onPress} activeOpacity={0.8}>
+        <Image
+          source={{ uri: recipe.image }}
+          style={styles.compactImage}
+          contentFit="cover"
+          transition={200}
+        />
+        {isLocked && (
+          <View style={styles.lockOverlay}>
+            <MaterialIcons name="lock" size={20} color={Colors.textInverse} />
+          </View>
+        )}
+        <View style={styles.compactContent}>
+          <Text style={styles.compactName} numberOfLines={2}>{recipe.name}</Text>
+          <View style={styles.compactMeta}>
+            <MaterialIcons name="schedule" size={12} color={Colors.textSubtle} />
+            <Text style={styles.metaText}>{recipe.time}min</Text>
+          </View>
+        </View>
+      </TouchableOpacity>
+    );
+  }
+
+  return (
+    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.85}>
+      <View style={styles.imageContainer}>
+        <Image
+          source={{ uri: recipe.image }}
+          style={styles.image}
+          contentFit="cover"
+          transition={200}
+        />
+        {isLocked && (
+          <View style={styles.lockOverlayFull}>
+            <View style={styles.lockBadge}>
+              <MaterialIcons name="lock" size={14} color={Colors.premium} />
+              <Text style={styles.lockText}>Premium</Text>
+            </View>
+          </View>
+        )}
+        {recipe.isPremium && (
+          <View style={styles.premiumBadge}>
+            <MaterialIcons name="star" size={12} color={Colors.text} />
+            <Text style={styles.premiumText}>Premium</Text>
+          </View>
+        )}
+      </View>
+      <View style={styles.content}>
+        <View style={styles.header}>
+          <Text style={styles.name} numberOfLines={2}>{recipe.name}</Text>
+          <TouchableOpacity onPress={handleSave} disabled={isLocked} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <MaterialIcons
+              name={saved ? 'bookmark' : 'bookmark-border'}
+              size={24}
+              color={saved ? Colors.primary : Colors.textSubtle}
+            />
+          </TouchableOpacity>
+        </View>
+        <Text style={styles.description} numberOfLines={2}>{recipe.description}</Text>
+        <View style={styles.meta}>
+          <View style={styles.metaItem}>
+            <MaterialIcons name="schedule" size={14} color={Colors.textSubtle} />
+            <Text style={styles.metaText}>{recipe.time} min</Text>
+          </View>
+          <View style={styles.metaItem}>
+            <MaterialIcons name="people" size={14} color={Colors.textSubtle} />
+            <Text style={styles.metaText}>{recipe.servings} porções</Text>
+          </View>
+          <View style={[styles.difficultyBadge, { backgroundColor: DIFFICULTY_COLORS[recipe.difficulty] + '22' }]}>
+            <Text style={[styles.difficultyText, { color: DIFFICULTY_COLORS[recipe.difficulty] }]}>
+              {DIFFICULTY_LABELS[recipe.difficulty]}
+            </Text>
+          </View>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+}
+
+const styles = StyleSheet.create({
+  card: {
+    backgroundColor: Colors.surfaceElevated,
+    borderRadius: Radius.lg,
+    overflow: 'hidden',
+    marginBottom: Spacing.base,
+    ...Shadows.md,
+  },
+  imageContainer: {
+    position: 'relative',
+  },
+  image: {
+    width: '100%',
+    height: 180,
+  },
+  lockOverlayFull: {
+    position: 'absolute',
+    inset: 0,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  lockBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    borderRadius: Radius.full,
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    gap: 6,
+  },
+  lockText: {
+    color: Colors.premium,
+    fontWeight: Typography.weights.bold,
+    fontSize: Typography.sizes.sm,
+  },
+  premiumBadge: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.premium,
+    borderRadius: Radius.full,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    gap: 4,
+  },
+  premiumText: {
+    color: Colors.text,
+    fontSize: Typography.sizes.xs,
+    fontWeight: Typography.weights.bold,
+  },
+  content: {
+    padding: Spacing.base,
+    gap: Spacing.sm,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: Spacing.sm,
+  },
+  name: {
+    flex: 1,
+    fontSize: Typography.sizes.lg,
+    fontWeight: Typography.weights.bold,
+    color: Colors.text,
+    lineHeight: Typography.sizes.lg * 1.3,
+  },
+  description: {
+    fontSize: Typography.sizes.sm,
+    color: Colors.textSecondary,
+    lineHeight: Typography.sizes.sm * 1.6,
+  },
+  meta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+    marginTop: Spacing.xs,
+  },
+  metaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  metaText: {
+    fontSize: Typography.sizes.xs,
+    color: Colors.textSubtle,
+    fontWeight: Typography.weights.medium,
+  },
+  difficultyBadge: {
+    borderRadius: Radius.full,
+    paddingVertical: 3,
+    paddingHorizontal: 10,
+    marginLeft: 'auto',
+  },
+  difficultyText: {
+    fontSize: Typography.sizes.xs,
+    fontWeight: Typography.weights.semibold,
+  },
+  // Compact styles
+  compactCard: {
+    width: 160,
+    backgroundColor: Colors.surfaceElevated,
+    borderRadius: Radius.lg,
+    overflow: 'hidden',
+    ...Shadows.sm,
+  },
+  compactImage: {
+    width: 160,
+    height: 110,
+  },
+  lockOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 110,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  compactContent: {
+    padding: Spacing.md,
+    gap: Spacing.xs,
+  },
+  compactName: {
+    fontSize: Typography.sizes.sm,
+    fontWeight: Typography.weights.semibold,
+    color: Colors.text,
+    lineHeight: 18,
+  },
+});
