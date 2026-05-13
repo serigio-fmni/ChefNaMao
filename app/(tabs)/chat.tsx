@@ -9,19 +9,28 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { Colors, Typography, Spacing, Radius, Shadows } from '../../constants/theme';
 import { useApp } from '../../hooks/useApp';
-import { getChefResponse, ChatMessage, createWelcomeMessage } from '../../services/chatService';
+import {
+  getChefAIResponse,
+  getChefResponse,
+  ChatMessage,
+  createWelcomeMessage,
+} from '../../services/chatService';
 import { PremiumBanner, VoiceActivator } from '../../components';
 
 export default function ChatScreen() {
   const insets = useSafeAreaInsets();
-  const { profile, consumeVoiceEnergy } = useApp();
+  const router = useRouter();
+  const { profile, consumeVoiceEnergy, session, updateProfile } = useApp();
   const [messages, setMessages] = useState<ChatMessage[]>([createWelcomeMessage()]);
+  const [conversationHistory, setConversationHistory] = useState<Array<{ role: 'user' | 'assistant'; content: string }>>([]);
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [showVoice, setShowVoice] = useState(false);
@@ -49,19 +58,67 @@ export default function ChatScreen() {
     setMessages(prev => [...prev, userMsg]);
     setIsTyping(true);
 
+    // Build conversation history for context
+    const newHistory = [...conversationHistory, { role: 'user' as const, content: text }];
+
     try {
-      const response = await getChefResponse(text);
+      let replyText = '';
+
+      if (session?.access_token) {
+        // Authenticated: use real AI via Edge Function
+        const result = await getChefAIResponse(newHistory, {
+          mode: 'chat',
+          token: session.access_token,
+        });
+
+        if (result.error) {
+          // Fallback to mock on AI error
+          replyText = await getChefResponse(text);
+        } else {
+          replyText = result.reply;
+          // Update history
+          setConversationHistory([
+            ...newHistory,
+            { role: 'assistant', content: replyText },
+          ]);
+        }
+      } else {
+        // Not authenticated: use mock responses
+        replyText = await getChefResponse(text);
+      }
+
       const chefMsg: ChatMessage = {
         id: (Date.now() + 1).toString(),
-        text: response,
+        text: replyText,
         isUser: false,
         timestamp: new Date(),
       };
       setMessages(prev => [...prev, chefMsg]);
-    } catch (e) {
+    } catch {
       // silent
     } finally {
       setIsTyping(false);
+    }
+  };
+
+  const handleVoiceEnergyConsumed = async () => {
+    if (!session?.access_token) return;
+
+    // Voice mode: check energy first
+    if (profile.voiceEnergy <= 0) {
+      Alert.alert(
+        'Energia Esgotada',
+        'Sua energia de voz do OkCheff foi esgotada. Aguarde a recarga diária ou faça upgrade do plano.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+
+    await consumeVoiceEnergy();
+
+    // Optionally sync from server after voice interaction
+    if (session?.access_token) {
+      const { getChefAIResponse: call } = await import('../../services/chatService');
     }
   };
 
@@ -75,6 +132,8 @@ export default function ChatScreen() {
     'Receitas com frango',
     'Temperos essenciais',
   ];
+
+  const isAuthenticated = !!session;
 
   return (
     <KeyboardAvoidingView
@@ -94,8 +153,17 @@ export default function ChatScreen() {
         </View>
         <View style={styles.headerInfo}>
           <Text style={styles.headerName}>OkCheff</Text>
-          <Text style={styles.headerStatus}>Assistente culinário • Online</Text>
+          <Text style={styles.headerStatus}>
+            {isAuthenticated ? 'Assistente com IA • Online' : 'Assistente culinário • Online'}
+          </Text>
         </View>
+        {/* AI indicator */}
+        {isAuthenticated && (
+          <View style={styles.aiIndicator}>
+            <MaterialIcons name="auto-awesome" size={14} color={Colors.premium} />
+            <Text style={styles.aiIndicatorText}>IA</Text>
+          </View>
+        )}
         {/* Voice toggle button */}
         <TouchableOpacity
           style={[styles.voiceToggleBtn, showVoice && styles.voiceToggleBtnActive]}
@@ -115,14 +183,25 @@ export default function ChatScreen() {
         </TouchableOpacity>
       </View>
 
+      {/* Auth notice */}
+      {!isAuthenticated && (
+        <TouchableOpacity style={styles.authBanner} onPress={() => router.push('/auth')}>
+          <MaterialIcons name="info-outline" size={16} color={Colors.primaryDark} />
+          <Text style={styles.authBannerText}>
+            Faça login para usar a IA real do OkCheff
+          </Text>
+          <MaterialIcons name="chevron-right" size={16} color={Colors.primaryDark} />
+        </TouchableOpacity>
+      )}
+
       {/* Voice Activator panel */}
       {showVoice && (
         <View style={styles.voicePanel}>
           {profile.isPremium ? (
             <VoiceActivator
               isPremium={profile.isPremium}
-              energyLevel={profile.voiceEnergy}
-              onEnergyConsumed={consumeVoiceEnergy}
+              energyLevel={profile.voiceEnergy / 100}
+              onEnergyConsumed={handleVoiceEnergyConsumed}
             />
           ) : (
             <PremiumBanner feature="Modo Mãos Livres com comando 'Ok Cheff' e voz bidirecional" />
@@ -148,12 +227,7 @@ export default function ChatScreen() {
                 <MaterialIcons name="restaurant" size={14} color={Colors.textInverse} />
               </View>
             )}
-            <View
-              style={[
-                styles.bubble,
-                msg.isUser ? styles.bubbleUser : styles.bubbleChef,
-              ]}
-            >
+            <View style={[styles.bubble, msg.isUser ? styles.bubbleUser : styles.bubbleChef]}>
               <Text style={[styles.bubbleText, msg.isUser ? styles.bubbleTextUser : styles.bubbleTextChef]}>
                 {msg.text}
               </Text>
@@ -186,11 +260,7 @@ export default function ChatScreen() {
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             <View style={styles.quickRow}>
               {QUICK_QUESTIONS.map(q => (
-                <TouchableOpacity
-                  key={q}
-                  style={styles.quickChip}
-                  onPress={() => setInputText(q)}
-                >
+                <TouchableOpacity key={q} style={styles.quickChip} onPress={() => setInputText(q)}>
                   <Text style={styles.quickChipText}>{q}</Text>
                 </TouchableOpacity>
               ))}
@@ -214,8 +284,8 @@ export default function ChatScreen() {
         />
         <VoiceActivator
           isPremium={profile.isPremium}
-          energyLevel={profile.voiceEnergy}
-          onEnergyConsumed={consumeVoiceEnergy}
+          energyLevel={profile.voiceEnergy / 100}
+          onEnergyConsumed={handleVoiceEnergyConsumed}
           compact
         />
         <TouchableOpacity
@@ -282,6 +352,22 @@ const styles = StyleSheet.create({
     color: Colors.success,
     fontWeight: Typography.weights.medium,
   },
+  aiIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: Colors.premium + '25',
+    borderRadius: Radius.full,
+    paddingVertical: 3,
+    paddingHorizontal: 8,
+    borderWidth: 1,
+    borderColor: Colors.premium + '55',
+  },
+  aiIndicatorText: {
+    fontSize: Typography.sizes.xs,
+    fontWeight: Typography.weights.bold,
+    color: Colors.premiumDark,
+  },
   voiceToggleBtn: {
     width: 44,
     height: 44,
@@ -304,6 +390,22 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.textSubtle,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  authBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    backgroundColor: Colors.primary + '12',
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.base,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  authBannerText: {
+    flex: 1,
+    fontSize: Typography.sizes.sm,
+    color: Colors.primaryDark,
+    fontWeight: Typography.weights.medium,
   },
   voicePanel: {
     paddingHorizontal: Spacing.base,

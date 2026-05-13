@@ -7,9 +7,13 @@ import {
   TouchableOpacity,
   TextInput,
   Switch,
+  Platform,
+  Alert,
+  Modal,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { Colors, Typography, Spacing, Radius, Shadows } from '../../constants/theme';
 import { useApp } from '../../hooks/useApp';
 import { DietType, MealType, DIET_LABELS, MEAL_TYPE_LABELS } from '../../constants/data';
@@ -21,9 +25,22 @@ const MEAL_OPTIONS: MealType[] = ['rapida', 'classica', 'internacional', 'region
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
-  const { profile, updateProfile, savedRecipes, eventRecipes, consumeVoiceEnergy } = useApp();
+  const router = useRouter();
+  const { profile, updateProfile, savedRecipes, eventRecipes, consumeVoiceEnergy, user, signOut } = useApp();
   const [editingName, setEditingName] = useState(false);
   const [nameInput, setNameInput] = useState(profile.name);
+  const [showSignOutAlert, setShowSignOutAlert] = useState(false);
+
+  const handleSignOut = () => {
+    if (Platform.OS === 'web') {
+      setShowSignOutAlert(true);
+    } else {
+      Alert.alert('Sair da conta', 'Deseja realmente sair do OkCheff?', [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Sair', style: 'destructive', onPress: () => signOut() },
+      ]);
+    }
+  };
 
   const saveName = () => {
     if (nameInput.trim()) updateProfile({ name: nameInput.trim() });
@@ -48,6 +65,61 @@ export default function ProfileScreen() {
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
     >
+      {/* Sign Out Confirmation Modal (web) */}
+      {Platform.OS === 'web' && (
+        <Modal visible={showSignOutAlert} transparent animationType="fade">
+          <View style={styles.modalBackdrop}>
+            <View style={styles.modalBox}>
+              <Text style={styles.modalTitle}>Sair da conta</Text>
+              <Text style={styles.modalMessage}>Deseja realmente sair do OkCheff?</Text>
+              <View style={styles.modalButtons}>
+                <TouchableOpacity
+                  style={styles.modalCancelButton}
+                  onPress={() => setShowSignOutAlert(false)}
+                >
+                  <Text style={styles.modalCancelText}>Cancelar</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.modalConfirmButton}
+                  onPress={() => { setShowSignOutAlert(false); signOut(); }}
+                >
+                  <Text style={styles.modalConfirmText}>Sair</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+      )}
+      {/* Account section */}
+      {user ? (
+        <View style={styles.accountCard}>
+          <View style={styles.accountLeft}>
+            <MaterialIcons name="verified-user" size={18} color={Colors.success} />
+            <View>
+              <Text style={styles.accountEmail} numberOfLines={1}>{user.email}</Text>
+              <Text style={styles.accountStatus}>Conta conectada</Text>
+            </View>
+          </View>
+          <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut} activeOpacity={0.8}>
+            <MaterialIcons name="logout" size={16} color={Colors.error} />
+            <Text style={styles.signOutText}>Sair</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <TouchableOpacity
+          style={styles.signInCard}
+          onPress={() => router.push('/auth')}
+          activeOpacity={0.85}
+        >
+          <MaterialIcons name="login" size={20} color={Colors.primary} />
+          <View style={styles.signInInfo}>
+            <Text style={styles.signInTitle}>Entrar / Criar conta</Text>
+            <Text style={styles.signInSubtitle}>Sincronize receitas e use a IA real</Text>
+          </View>
+          <MaterialIcons name="chevron-right" size={20} color={Colors.textSubtle} />
+        </TouchableOpacity>
+      )}
+
       {/* Profile card */}
       <View style={styles.profileCard}>
         <View style={styles.avatarCircle}>
@@ -214,7 +286,7 @@ export default function ProfileScreen() {
         <Text style={styles.sectionTitle}>Modo Mãos Livres — Ok Cheff</Text>
         <VoiceActivator
           isPremium={profile.isPremium}
-          energyLevel={profile.voiceEnergy}
+          energyLevel={profile.voiceEnergy / 100}
           onEnergyConsumed={consumeVoiceEnergy}
         />
         {profile.isPremium && (
@@ -266,6 +338,7 @@ export default function ProfileScreen() {
     </ScrollView>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {
@@ -507,5 +580,126 @@ const styles = StyleSheet.create({
     color: Colors.textSubtle,
     fontStyle: 'italic',
     textAlign: 'center',
+  },
+  // Account
+  accountCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.success + '12',
+    borderRadius: Radius.md,
+    padding: Spacing.md,
+    marginTop: Spacing.base,
+    borderWidth: 1,
+    borderColor: Colors.success + '30',
+    gap: Spacing.sm,
+  },
+  accountLeft: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  accountEmail: {
+    fontSize: Typography.sizes.sm,
+    fontWeight: Typography.weights.semibold,
+    color: Colors.text,
+    maxWidth: 200,
+  },
+  accountStatus: {
+    fontSize: Typography.sizes.xs,
+    color: Colors.success,
+    fontWeight: Typography.weights.medium,
+  },
+  signOutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: Colors.error + '15',
+    borderRadius: Radius.sm,
+    paddingVertical: Spacing.xs,
+    paddingHorizontal: Spacing.sm,
+  },
+  signOutText: {
+    fontSize: Typography.sizes.sm,
+    color: Colors.error,
+    fontWeight: Typography.weights.semibold,
+  },
+  signInCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+    backgroundColor: Colors.primary + '10',
+    borderRadius: Radius.md,
+    padding: Spacing.base,
+    marginTop: Spacing.base,
+    borderWidth: 1.5,
+    borderColor: Colors.primary + '30',
+  },
+  signInInfo: {
+    flex: 1,
+  },
+  signInTitle: {
+    fontSize: Typography.sizes.base,
+    fontWeight: Typography.weights.bold,
+    color: Colors.primary,
+  },
+  signInSubtitle: {
+    fontSize: Typography.sizes.xs,
+    color: Colors.textSubtle,
+    marginTop: 2,
+  },
+  // Modal (web)
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalBox: {
+    backgroundColor: Colors.surfaceElevated,
+    borderRadius: Radius.lg,
+    padding: Spacing.xl,
+    minWidth: 300,
+    maxWidth: 360,
+    ...Shadows.lg,
+  },
+  modalTitle: {
+    fontSize: Typography.sizes.xl,
+    fontWeight: Typography.weights.bold,
+    color: Colors.text,
+    marginBottom: Spacing.sm,
+  },
+  modalMessage: {
+    fontSize: Typography.sizes.base,
+    color: Colors.textSecondary,
+    lineHeight: 22,
+    marginBottom: Spacing.xl,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    gap: Spacing.md,
+    justifyContent: 'flex-end',
+  },
+  modalCancelButton: {
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.base,
+    borderRadius: Radius.md,
+    backgroundColor: Colors.surfaceDark,
+  },
+  modalCancelText: {
+    fontSize: Typography.sizes.base,
+    color: Colors.text,
+    fontWeight: Typography.weights.medium,
+  },
+  modalConfirmButton: {
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.base,
+    borderRadius: Radius.md,
+    backgroundColor: Colors.error,
+  },
+  modalConfirmText: {
+    fontSize: Typography.sizes.base,
+    color: Colors.textInverse,
+    fontWeight: Typography.weights.semibold,
   },
 });
