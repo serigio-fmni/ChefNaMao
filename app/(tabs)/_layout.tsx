@@ -1,8 +1,9 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Platform } from 'react-native';
-import { Colors, Typography, Shadows } from '../../constants/theme';
+import { Platform, View } from 'react-native';
+import { Image } from 'expo-image';
+import { Colors, Typography, Shadows, Radius } from '../../constants/theme';
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
@@ -62,8 +63,20 @@ export default function TabLayout() {
         name="chat"
         options={{
           title: 'Chef Chat',
-          tabBarIcon: ({ color, size }) => (
-            <MaterialIcons name="chat" size={size} color={color} />
+          tabBarIcon: ({ focused }) => (
+            <View style={{
+              width: 28, height: 28,
+              borderRadius: Radius.sm,
+              overflow: 'hidden',
+              borderWidth: focused ? 1.5 : 0,
+              borderColor: Colors.primary,
+            }}>
+              <Image
+                source={require('../../assets/images/okcheff-logo.png')}
+                style={{ width: 28, height: 28 }}
+                contentFit="contain"
+              />
+            </View>
           ),
         }}
       />

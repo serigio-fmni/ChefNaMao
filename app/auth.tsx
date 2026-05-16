@@ -91,9 +91,9 @@ export default function AuthScreen() {
         <View style={styles.brandSection}>
           <View style={styles.logoContainer}>
             <Image
-              source={require('../assets/images/chef-avatar.png')}
+              source={require('../assets/images/okcheff-logo.png')}
               style={styles.logo}
-              contentFit="cover"
+              contentFit="contain"
               transition={300}
             />
           </View>
