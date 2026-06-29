@@ -50,6 +50,8 @@ export default function HomeScreen() {
 
   const [activeTab, setActiveTab] = useState<HomeTab>('geladeira');
 
+  const handleOpenSearch = () => router.push('/search');
+
   // Na Geladeira state
   const [ingredientInput, setIngredientInput] = useState('');
   const [ingredients, setIngredients] = useState<string[]>([]);
@@ -141,6 +143,16 @@ export default function HomeScreen() {
             transition={300}
           />
           <View style={styles.heroOverlay} />
+          {/* Search shortcut button */}
+          <TouchableOpacity
+            style={styles.heroSearchBtn}
+            onPress={handleOpenSearch}
+            activeOpacity={0.85}
+          >
+            <MaterialIcons name="search" size={20} color={Colors.textInverse} />
+            <Text style={styles.heroSearchText}>Busca avançada</Text>
+            <MaterialIcons name="tune" size={16} color={'rgba(255,255,255,0.7)'} />
+          </TouchableOpacity>
           <View style={styles.heroContent}>
             {profile.isPremium && (
               <View style={styles.premiumIndicator}>
@@ -529,6 +541,25 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 0, left: 0, right: 0, bottom: 0,
     backgroundColor: 'rgba(44, 24, 16, 0.55)',
+  },
+  heroSearchBtn: {
+    position: 'absolute',
+    top: 12,
+    right: Spacing.base,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    borderRadius: Radius.full,
+    paddingVertical: 7,
+    paddingHorizontal: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.3)',
+  },
+  heroSearchText: {
+    fontSize: Typography.sizes.sm,
+    fontWeight: Typography.weights.semibold,
+    color: Colors.textInverse,
   },
   heroContent: {
     position: 'absolute',

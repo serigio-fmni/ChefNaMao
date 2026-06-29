@@ -37,6 +37,14 @@ export default function RootLayout() {
                 animation: 'slide_from_right',
               }}
             />
+            <Stack.Screen
+              name="search"
+              options={{
+                headerShown: false,
+                presentation: 'card',
+                animation: 'slide_from_bottom',
+              }}
+            />
           </Stack>
         </AuthGate>
       </AppProvider>
