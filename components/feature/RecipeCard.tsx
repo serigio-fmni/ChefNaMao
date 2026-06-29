@@ -12,17 +12,31 @@ interface RecipeCardProps {
   compact?: boolean;
 }
 
-const DIFFICULTY_LABELS = {
+const DIFFICULTY_LABELS: Record<string, string> = {
   facil: 'Fácil',
   medio: 'Médio',
   dificil: 'Difícil',
 };
 
-const DIFFICULTY_COLORS = {
+const DIFFICULTY_COLORS: Record<string, string> = {
   facil: Colors.success,
   medio: Colors.warning,
   dificil: Colors.error,
 };
+
+const DIET_LABELS: Record<string, string> = {
+  tradicional: 'Tradicional',
+  vegetariana: 'Vegetariana',
+  vegana: 'Vegana',
+};
+
+const DIET_COLORS: Record<string, string> = {
+  tradicional: '#8B4513',
+  vegetariana: '#2E7D32',
+  vegana: '#1B5E20',
+};
+
+const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=600&q=80';
 
 export function RecipeCard({ recipe, onPress, compact = false }: RecipeCardProps) {
   const { isRecipeSaved, saveRecipe, removeRecipe, profile } = useApp();
@@ -36,11 +50,22 @@ export function RecipeCard({ recipe, onPress, compact = false }: RecipeCardProps
     else saveRecipe(recipe);
   };
 
+  const diet = Array.isArray(recipe.diet) ? recipe.diet[0] : recipe.diet;
+  const imageUri = recipe.image && recipe.image.startsWith('http') ? recipe.image : FALLBACK_IMAGE;
+
+  // Ingredientes sem quantidade (apenas nome)
+  const ingredientNames = (recipe.ingredients || [])
+    .slice(0, 5)
+    .map((ing: string) => {
+      const parts = ing.split(' ');
+      return parts.length > 2 ? parts.slice(2).join(' ') : ing;
+    });
+
   if (compact) {
     return (
       <TouchableOpacity style={styles.compactCard} onPress={onPress} activeOpacity={0.8}>
         <Image
-          source={{ uri: recipe.image }}
+          source={{ uri: imageUri }}
           style={styles.compactImage}
           contentFit="cover"
           transition={200}
@@ -63,9 +88,10 @@ export function RecipeCard({ recipe, onPress, compact = false }: RecipeCardProps
 
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.85}>
+      {/* Imagem */}
       <View style={styles.imageContainer}>
         <Image
-          source={{ uri: recipe.image }}
+          source={{ uri: imageUri }}
           style={styles.image}
           contentFit="cover"
           transition={200}
@@ -78,17 +104,24 @@ export function RecipeCard({ recipe, onPress, compact = false }: RecipeCardProps
             </View>
           </View>
         )}
-        {recipe.isPremium && (
-          <View style={styles.premiumBadge}>
-            <MaterialIcons name="star" size={12} color={Colors.text} />
-            <Text style={styles.premiumText}>Premium</Text>
+        {/* Badge de dieta */}
+        {diet && DIET_LABELS[diet] && (
+          <View style={[styles.dietBadge, { backgroundColor: DIET_COLORS[diet] + 'DD' }]}>
+            <Text style={styles.dietText}>{DIET_LABELS[diet]}</Text>
           </View>
         )}
       </View>
+
+      {/* Conteúdo */}
       <View style={styles.content}>
+        {/* Nome + Salvar */}
         <View style={styles.header}>
           <Text style={styles.name} numberOfLines={2}>{recipe.name}</Text>
-          <TouchableOpacity onPress={handleSave} disabled={isLocked} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+          <TouchableOpacity
+            onPress={handleSave}
+            disabled={isLocked}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
             <MaterialIcons
               name={saved ? 'bookmark' : 'bookmark-border'}
               size={24}
@@ -96,7 +129,11 @@ export function RecipeCard({ recipe, onPress, compact = false }: RecipeCardProps
             />
           </TouchableOpacity>
         </View>
+
+        {/* Descrição */}
         <Text style={styles.description} numberOfLines={2}>{recipe.description}</Text>
+
+        {/* Meta: tempo, porções, dificuldade */}
         <View style={styles.meta}>
           <View style={styles.metaItem}>
             <MaterialIcons name="schedule" size={14} color={Colors.textSubtle} />
@@ -111,6 +148,26 @@ export function RecipeCard({ recipe, onPress, compact = false }: RecipeCardProps
               {DIFFICULTY_LABELS[recipe.difficulty]}
             </Text>
           </View>
+        </View>
+
+        {/* Ingredientes sem quantidade */}
+        {ingredientNames.length > 0 && (
+          <View style={styles.ingredientsSection}>
+            <View style={styles.ingredientsHeader}>
+              <MaterialIcons name="kitchen" size={13} color={Colors.textSubtle} />
+              <Text style={styles.ingredientsLabel}>Ingredientes principais:</Text>
+            </View>
+            <Text style={styles.ingredientsList} numberOfLines={2}>
+              {ingredientNames.join(' · ')}
+              {recipe.ingredients.length > 5 ? ` +${recipe.ingredients.length - 5} mais` : ''}
+            </Text>
+          </View>
+        )}
+
+        {/* Botão ver receita completa */}
+        <View style={styles.unlockHint}>
+          <MaterialIcons name="lock-outline" size={13} color={Colors.primary} />
+          <Text style={styles.unlockHintText}>Toque para ver a receita completa</Text>
         </View>
       </View>
     </TouchableOpacity>
@@ -153,20 +210,16 @@ const styles = StyleSheet.create({
     fontWeight: Typography.weights.bold,
     fontSize: Typography.sizes.sm,
   },
-  premiumBadge: {
+  dietBadge: {
     position: 'absolute',
     top: 10,
-    right: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.premium,
+    left: 10,
     borderRadius: Radius.full,
     paddingVertical: 4,
     paddingHorizontal: 10,
-    gap: 4,
   },
-  premiumText: {
-    color: Colors.text,
+  dietText: {
+    color: '#FFFFFF',
     fontSize: Typography.sizes.xs,
     fontWeight: Typography.weights.bold,
   },
@@ -217,6 +270,41 @@ const styles = StyleSheet.create({
   difficultyText: {
     fontSize: Typography.sizes.xs,
     fontWeight: Typography.weights.semibold,
+  },
+  ingredientsSection: {
+    backgroundColor: Colors.background,
+    borderRadius: Radius.md,
+    padding: Spacing.sm,
+    gap: 4,
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
+  },
+  ingredientsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  ingredientsLabel: {
+    fontSize: Typography.sizes.xs,
+    color: Colors.textSubtle,
+    fontWeight: Typography.weights.semibold,
+  },
+  ingredientsList: {
+    fontSize: Typography.sizes.xs,
+    color: Colors.textSecondary,
+    lineHeight: 18,
+  },
+  unlockHint: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    justifyContent: 'center',
+    paddingTop: Spacing.xs,
+  },
+  unlockHintText: {
+    fontSize: Typography.sizes.xs,
+    color: Colors.primary,
+    fontWeight: Typography.weights.medium,
   },
   // Compact styles
   compactCard: {
