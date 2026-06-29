@@ -28,13 +28,13 @@ const DIFFICULTY_COLORS: Record<string, string> = {
   dificil: Colors.error,
 };
 
-type NotebookTab = 'receitas' | 'eventos';
+type NotebookTab = 'ideias' | 'receitas' | 'eventos';
 
 export default function NotebookScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { savedRecipes, removeRecipe, eventRecipes, removeEventRecipe, profile } = useApp();
-  const [activeTab, setActiveTab] = useState<NotebookTab>('receitas');
+  const [activeTab, setActiveTab] = useState<NotebookTab>('ideias');
   const [alertState, setAlertState] = useState<{
     visible: boolean;
     id: string;
@@ -71,9 +71,9 @@ export default function NotebookScreen() {
     return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
   };
 
-  const currentList = activeTab === 'receitas' ? savedRecipes : eventRecipes;
+  const currentList = activeTab === 'ideias' ? savedRecipes.filter((r: any) => !r.isUnlocked) : activeTab === 'receitas' ? savedRecipes.filter((r: any) => r.isUnlocked) : eventRecipes;
   const isEmpty = currentList.length === 0;
-  const atLimit = !profile.isPremium && savedRecipes.length >= 5 && activeTab === 'receitas';
+  const atLimit = !profile.isPremium && savedRecipes.length >= 5 && activeTab === 'ideias';
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -95,21 +95,34 @@ export default function NotebookScreen() {
       {/* Category tabs */}
       <View style={styles.tabBar}>
         <TouchableOpacity
+          style={[styles.tab, activeTab === 'ideias' && styles.tabActive]}
+          onPress={() => setActiveTab('ideias')}
+        >
+          <MaterialIcons
+            name="bookmark-border"
+            size={16}
+            color={activeTab === 'ideias' ? Colors.primary : Colors.textSubtle}
+          />
+          <Text style={[styles.tabText, activeTab === 'ideias' && styles.tabTextActive]}>
+            Ideias
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
           style={[styles.tab, activeTab === 'receitas' && styles.tabActive]}
           onPress={() => setActiveTab('receitas')}
         >
           <MaterialIcons
-            name="bookmark"
+            name="menu-book"
             size={16}
             color={activeTab === 'receitas' ? Colors.primary : Colors.textSubtle}
           />
           <Text style={[styles.tabText, activeTab === 'receitas' && styles.tabTextActive]}>
             Receitas
           </Text>
-          {savedRecipes.length > 0 && (
+          {savedRecipes.filter((r: any) => r.isUnlocked).length > 0 && (
             <View style={[styles.tabBadge, activeTab === 'receitas' && styles.tabBadgeActive]}>
               <Text style={[styles.tabBadgeText, activeTab === 'receitas' && styles.tabBadgeTextActive]}>
-                {savedRecipes.length}
+                {savedRecipes.filter((r: any) => r.isUnlocked).length}
               </Text>
             </View>
           )}
@@ -130,7 +143,7 @@ export default function NotebookScreen() {
               activeTab === 'eventos' && { color: Colors.premium },
             ]}
           >
-            Meus Eventos
+            Eventos
           </Text>
           {eventRecipes.length > 0 && (
             <View
