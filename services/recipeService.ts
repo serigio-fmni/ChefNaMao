@@ -6,31 +6,11 @@ export interface RecipeFilters {
   diet?: DietType | 'todas';
   mealType?: MealType | 'todas';
   isPremium: boolean;
-  userId?: string;
 }
 
 export interface InspirationFilters {
   occasion: EventOccasion;
   diet?: DietType | 'todas';
-}
-
-function normalizeText(text: string): string {
-  return text
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '');
-}
-
-function calculateMatchScore(recipe: Recipe, ingredients: string[]): number {
-  if (ingredients.length === 0) return 1;
-  const normalizedIngredients = ingredients.map(normalizeText);
-  const recipeIngredients = recipe.ingredients.map(i => normalizeText(i));
-  let matches = 0;
-  for (const ing of normalizedIngredients) {
-    const found = recipeIngredients.some(ri => ri.includes(ing) || ing.includes(ri.split(' ')[0]));
-    if (found) matches++;
-  }
-  return matches / ingredients.length;
 }
 
 function mapDBToRecipe(row: any): Recipe {
@@ -43,11 +23,12 @@ function mapDBToRecipe(row: any): Recipe {
     difficulty: row.difficulty ?? 'facil',
     diet: row.diet ? [row.diet] : ['tradicional'],
     type: row.meal_type ? [row.meal_type] : ['classica'],
-    dishType: row.occasion ? 'jantar' : 'almoco',
+    dishType: 'almoco',
     servings: row.servings ?? 2,
     ingredients: row.ingredients ?? [],
     steps: row.steps ?? [],
     shoppingList: row.shopping_list ?? [],
+    tips: row.tips ?? [],
     tags: row.tags ?? [],
     isPremium: false,
     isEvent: !!row.occasion,
@@ -55,137 +36,76 @@ function mapDBToRecipe(row: any): Recipe {
   };
 }
 
+async function callEdgeFunction(body: object): Promise<any> {
+  const { data, error } = await supabase.functions.invoke('okcheff-ai', { body });
+  if (error) throw new Error(error.message);
+  return data;
+}
+
 export async function generateRecipes(filters: RecipeFilters): Promise<Recipe[]> {
   try {
-    // Tenta buscar do cache no Supabase primeiro
-    let query = supabase.from('recipes').select('*').eq('is_cache', true);
-
-    if (filters.diet && filters.diet !== 'todas') {
-      query = query.eq('diet', filters.diet);
-    }
-    if (filters.mealType && filters.mealType !== 'todas') {
-      query = query.eq('meal_type', filters.mealType);
-    }
-
-    const { data, error } = await query.limit(20);
-
-    if (!error && data && data.length > 0) {
-      let results = data.map(mapDBToRecipe);
-
-      // Filtra e ordena por ingredientes se fornecidos
-      if (filters.ingredients.length > 0) {
-        results = results
-          .map(r => ({ recipe: r, score: calculateMatchScore(r, filters.ingredients) }))
-          .filter(r => r.score > 0)
-          .sort((a, b) => b.score - a.score)
-          .map(r => r.recipe);
-      }
-
-      if (results.length > 0) {
-        return results.slice(0, 3);
-      }
-    }
-  } catch {
-    // Se falhar, cai no fallback
-  }
-
-  // Fallback: usa dados mockados locais
-  await new Promise(resolve => setTimeout(resolve, 1500));
-  let results = MOCK_RECIPES.filter(recipe => {
-    if (recipe.isPremium && !filters.isPremium) return false;
-    if (filters.diet && filters.diet !== 'todas') {
-      if (!recipe.diet.includes(filters.diet as DietType)) return false;
-    }
-    if (filters.mealType && filters.mealType !== 'todas') {
-      if (!recipe.type.includes(filters.mealType as MealType)) return false;
-    }
-    return true;
-  });
-
-  if (filters.ingredients.length > 0) {
-    results = results
-      .map(r => ({ recipe: r, score: calculateMatchScore(r, filters.ingredients) }))
-      .sort((a, b) => b.score - a.score)
-      .filter(r => r.score > 0)
-      .map(r => r.recipe);
-  }
-
-  if (results.length === 0) {
-    results = MOCK_RECIPES.filter(r => !r.isPremium || filters.isPremium);
-  }
-
-  return results.slice(0, 3);
-}
-
-export async function getRecipeById(id: string): Promise<Recipe | undefined> {
-  try {
-    const { data, error } = await supabase
-      .from('recipes')
-      .select('*')
-      .eq('id', id)
-      .single();
-
-    if (!error && data) {
-      return mapDBToRecipe(data);
-    }
-  } catch {
-    // fallback
-  }
-
-  // Fallback local
-  return MOCK_RECIPES.find(r => r.id === id);
-}
-
-export async function saveRecipeToCache(recipe: Recipe): Promise<void> {
-  try {
-    await supabase.from('recipes').upsert({
-      id: recipe.id,
-      name: recipe.name,
-      description: recipe.description,
-      image: recipe.image,
-      time_minutes: recipe.time,
-      difficulty: recipe.difficulty,
-      servings: recipe.servings,
-      diet: recipe.diet?.[0],
-      meal_type: recipe.type?.[0],
-      occasion: recipe.occasion,
-      ingredients: recipe.ingredients,
-      steps: recipe.steps,
-      shopping_list: recipe.shoppingList,
-      tags: recipe.tags,
-      is_cache: true,
+    const result = await callEdgeFunction({
+      mode: 'search',
+      ingredients: filters.ingredients,
+      diet: filters.diet ?? 'todas',
+      mealType: filters.mealType ?? 'todas',
+      language: 'pt',
     });
-  } catch {
-    // silent
+    if (result?.recipes && result.recipes.length > 0) {
+      return result.recipes.map(mapDBToRecipe);
+    }
+  } catch (e) {
+    console.warn('Edge Function error, usando fallback:', e);
   }
+  return MOCK_RECIPES.filter(r => !r.isPremium || filters.isPremium).slice(0, 5);
 }
 
 export async function generateInspirationMenu(filters: InspirationFilters): Promise<Recipe[]> {
   try {
-    const { data, error } = await supabase
-      .from('recipes')
-      .select('*')
-      .eq('occasion', filters.occasion)
-      .eq('is_cache', true)
-      .limit(3);
-
-    if (!error && data && data.length > 0) {
-      return data.map(mapDBToRecipe);
+    const result = await callEdgeFunction({
+      mode: 'search',
+      ingredients: [],
+      diet: filters.diet ?? 'todas',
+      mealType: 'todas',
+      occasion: filters.occasion,
+      language: 'pt',
+    });
+    if (result?.recipes && result.recipes.length > 0) {
+      return result.recipes.map(mapDBToRecipe);
     }
-  } catch {
-    // fallback
+  } catch (e) {
+    console.warn('Edge Function error, usando fallback:', e);
   }
+  return MOCK_RECIPES.slice(0, 5);
+}
 
-  // Fallback local
-  await new Promise(resolve => setTimeout(resolve, 1800));
-  const { INSPIRATION_MENUS } = await import('../constants/data') as any;
-  if (!INSPIRATION_MENUS) return [];
-  const menus = INSPIRATION_MENUS[filters.occasion] || [];
-  if (filters.diet && filters.diet !== 'todas') {
-    const filtered = menus.filter((r: Recipe) => r.diet.includes(filters.diet as DietType));
-    return filtered.length > 0 ? filtered : menus;
+export async function unlockRecipe(recipeId: string): Promise<{ recipe: Recipe; creditsRemaining: number } | null> {
+  try {
+    const result = await callEdgeFunction({ mode: 'unlock', recipeId });
+    if (result?.recipe) {
+      return { recipe: mapDBToRecipe(result.recipe), creditsRemaining: result.creditsRemaining ?? 0 };
+    }
+  } catch (e) {
+    console.warn('Erro ao desbloquear receita:', e);
   }
-  return menus;
+  return null;
+}
+
+export async function getRecipeById(id: string): Promise<Recipe | undefined> {
+  try {
+    const { data, error } = await supabase.from('recipes').select('*').eq('id', id).single();
+    if (!error && data) return mapDBToRecipe(data);
+  } catch {}
+  return MOCK_RECIPES.find(r => r.id === id);
+}
+
+export async function sendChatMessage(messages: Array<{ role: string; content: string }>): Promise<string> {
+  try {
+    const result = await callEdgeFunction({ mode: 'chat', messages });
+    return result?.reply ?? '';
+  } catch (e) {
+    return 'Desculpe, nao consegui responder agora. Tente novamente.';
+  }
 }
 
 export function getFeaturedRecipes(isPremium: boolean): Recipe[] {
