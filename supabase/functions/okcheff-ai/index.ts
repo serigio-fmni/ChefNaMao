@@ -28,8 +28,9 @@ async function searchRecipesInCache(supabase: any, ingredients: string[], diet: 
   if (diet && diet !== 'todas') query = query.eq('diet', diet);
   if (mealType && mealType !== 'todas') query = query.eq('meal_type', mealType);
   if (occasion) query = query.eq('occasion', occasion);
-  const { data, error } = await query.limit(20);
+  const { data, error } = await query.limit(50);
   if (error || !data || data.length === 0) return [];
+
   if (ingredients && ingredients.length > 0) {
     const normalize = (t: string) => t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     const normIngredients = ingredients.map(normalize);
@@ -37,9 +38,9 @@ async function searchRecipesInCache(supabase: any, ingredients: string[], diet: 
       const recipeIngredients = (recipe.ingredients || []).map((i: string) => normalize(i));
       let matches = 0;
       for (const ing of normIngredients) {
-        if (recipeIngredients.some((ri: string) => ri.includes(ing) || ing.includes(ri.split(' ')[0]))) matches++;
+        if (recipeIngredients.some((ri: string) => ri.includes(ing))) matches++;
       }
-      return { recipe, score: matches / normIngredients.length };
+      return { recipe, score: matches };
     }).filter((r: any) => r.score > 0).sort((a: any, b: any) => b.score - a.score);
     return scored.slice(0, 5).map((r: any) => r.recipe);
   }
@@ -82,27 +83,38 @@ async function getUserPackage(supabase: any, userId: string) {
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   try {
+    const body = await req.json();
+    const { mode = 'chat' } = body;
+
+    // ── Cliente público (sem login) — usado para busca de cards ──────────
+    const publicClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+    );
+
+    const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
+    if (!openaiApiKey) {
+      return new Response(JSON.stringify({ error: 'OpenAI key not configured' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    // ── MODO SEARCH: não exige login (busca é gratuita) ───────────────────
+    if (mode === 'search') {
+      const { ingredients = [], diet = 'todas', mealType = 'todas', occasion = null, language = 'pt' } = body;
+      let recipes = await searchRecipesInCache(publicClient, ingredients, diet, mealType, language, occasion);
+      if (recipes.length === 0) {
+        recipes = await generateRecipesWithAI(openaiApiKey, ingredients, diet, mealType, language, occasion);
+        await saveRecipesToCache(publicClient, recipes, language, occasion);
+      }
+      return new Response(JSON.stringify({ recipes }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    // ── MODOS QUE EXIGEM LOGIN: unlock e chat ──────────────────────────────
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     const token = authHeader.replace('Bearer ', '');
     const supabaseClient = createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_ANON_KEY') ?? '', { global: { headers: { Authorization: 'Bearer ' + token } } });
     const { data: { user }, error: userError } = await supabaseClient.auth.getUser(token);
     if (userError || !user) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-    const { data: profile } = await supabaseClient.from('users').select('subscription_type, language, welcome_recipe_used, recipes_balance').eq('id', user.id).single();
-    const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
-    if (!openaiApiKey) return new Response(JSON.stringify({ error: 'OpenAI key not configured' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-    const body = await req.json();
-    const { mode = 'chat' } = body;
-
-    if (mode === 'search') {
-      const { ingredients = [], diet = 'todas', mealType = 'todas', occasion = null, language = profile?.language || 'pt' } = body;
-      let recipes = await searchRecipesInCache(supabaseClient, ingredients, diet, mealType, language, occasion);
-      if (recipes.length === 0) {
-        recipes = await generateRecipesWithAI(openaiApiKey, ingredients, diet, mealType, language, occasion);
-        await saveRecipesToCache(supabaseClient, recipes, language, occasion);
-      }
-      return new Response(JSON.stringify({ recipes }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-    }
 
     if (mode === 'unlock') {
       const { recipeId } = body;
