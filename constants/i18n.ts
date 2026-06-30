@@ -1031,6 +1031,7 @@ export const LANGUAGE_OPTIONS: Array<{ value: Language; label: string; flag: str
   { value: 'en', label: 'English', flag: '🇺🇸' },
   { value: 'es', label: 'Español', flag: '🇪🇸' },
   { value: 'fr', label: 'Français', flag: '🇫🇷' },
-  { value: 'it', label: 'Italiano', flag: '🇮🇹' },
-  { value: 'de', label: 'Deutsch', flag: '🇩🇪' },
+  // Italiano e Alemão ocultos por enquanto — fora do foco de mercado do lançamento (PRD V4)
+  // { value: 'it', label: 'Italiano', flag: '🇮🇹' },
+  // { value: 'de', label: 'Deutsch', flag: '🇩🇪' },
 ];
