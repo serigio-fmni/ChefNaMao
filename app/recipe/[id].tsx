@@ -40,8 +40,7 @@ export default function RecipeScreen() {
 
   useEffect(() => {
     if (id) {
-      const found = getRecipeById(id);
-      setRecipe(found || null);
+      getRecipeById(id).then(found => setRecipe(found || null));
     }
   }, [id]);
 
