@@ -13,6 +13,31 @@ export interface InspirationFilters {
   diet?: DietType | 'todas';
 }
 
+// Converte a lista de compras para o formato que a tela espera (id, name, quantity, category).
+// As receitas podem chegar como texto solto (ex: "2 tomates") em vez de objeto estruturado.
+function normalizeShoppingList(list: any): import('../constants/data').ShoppingItem[] {
+  if (!Array.isArray(list)) return [];
+  return list
+    .filter(Boolean)
+    .map((item: any, index: number) => {
+      if (typeof item === 'string') {
+        return {
+          id: `item_${index}`,
+          name: item,
+          quantity: '',
+          category: 'outros' as const,
+        };
+      }
+      // já está no formato estruturado (ou parcialmente) — preenche o que faltar
+      return {
+        id: item.id ?? `item_${index}`,
+        name: item.name ?? String(item),
+        quantity: item.quantity ?? '',
+        category: item.category ?? 'outros',
+      };
+    });
+}
+
 function mapDBToRecipe(row: any): Recipe {
   return {
     id: row.id,
@@ -27,7 +52,7 @@ function mapDBToRecipe(row: any): Recipe {
     servings: row.servings ?? 2,
     ingredients: row.ingredients ?? [],
     steps: row.steps ?? [],
-    shoppingList: row.shopping_list ?? [],
+    shoppingList: normalizeShoppingList(row.shopping_list),
     tips: row.tips ?? [],
     tags: row.tags ?? [],
     isPremium: false,
