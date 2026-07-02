@@ -6,6 +6,8 @@ import {
   StyleSheet,
   TouchableOpacity,
   Animated,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -13,7 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Colors, Typography, Spacing, Radius, Shadows } from '../../constants/theme';
 import { useApp } from '../../hooks/useApp';
-import { getRecipeById } from '../../services/recipeService';
+import { getRecipeById, substituteIngredients } from '../../services/recipeService';
 import { Recipe, DISH_TYPE_LABELS } from '../../constants/data';
 import { PremiumBanner } from '../../components';
 
@@ -36,6 +38,8 @@ export default function RecipeScreen() {
   const [recipe, setRecipe] = useState<Recipe | null>(null);
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
   const [activeTab, setActiveTab] = useState<'ingredients' | 'steps'>('ingredients');
+  const [missingIngredients, setMissingIngredients] = useState<Set<number>>(new Set());
+  const [substituting, setSubstituting] = useState(false);
   const scrollY = new Animated.Value(0);
 
   useEffect(() => {
@@ -72,6 +76,31 @@ export default function RecipeScreen() {
       else next.add(index);
       return next;
     });
+  };
+
+  const toggleMissing = (index: number) => {
+    setMissingIngredients(prev => {
+      const next = new Set(prev);
+      if (next.has(index)) next.delete(index);
+      else next.add(index);
+      return next;
+    });
+  };
+
+  const confirmSubstitution = async () => {
+    if (!recipe || missingIngredients.size === 0) return;
+    const names = recipe.ingredients.filter((_, i) => missingIngredients.has(i));
+    setSubstituting(true);
+    const result = await substituteIngredients(recipe, names);
+    setSubstituting(false);
+    if (result) {
+      setRecipe(result.recipe);
+      setMissingIngredients(new Set());
+      setCompletedSteps(new Set());
+      Alert.alert('Receita ajustada', result.note || 'Os ingredientes foram trocados.');
+    } else {
+      Alert.alert('Ops', 'Não consegui trocar agora. Tente novamente.');
+    }
   };
 
   const headerOpacity = scrollY.interpolate({
@@ -199,12 +228,42 @@ export default function RecipeScreen() {
               {/* Ingredients list */}
               {activeTab === 'ingredients' && (
                 <View style={styles.listSection}>
-                  {recipe.ingredients.map((ing, i) => (
-                    <View key={i} style={styles.ingredientRow}>
-                      <View style={styles.ingredientDot} />
-                      <Text style={styles.ingredientText}>{ing}</Text>
-                    </View>
-                  ))}
+                  {recipe.ingredients.map((ing, i) => {
+                    const isMissing = missingIngredients.has(i);
+                    return (
+                      <View key={i} style={[styles.ingredientRow, isMissing && styles.ingredientRowMissing]}>
+                        <View style={styles.ingredientDot} />
+                        <Text style={[styles.ingredientText, isMissing && styles.ingredientTextMissing]}>{ing}</Text>
+                        <TouchableOpacity
+                          style={[styles.missingButton, isMissing && styles.missingButtonActive]}
+                          onPress={() => toggleMissing(i)}
+                          activeOpacity={0.75}
+                        >
+                          <Text style={[styles.missingButtonText, isMissing && styles.missingButtonTextActive]}>
+                            {isMissing ? 'Marcado' : 'Não tenho'}
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+                    );
+                  })}
+
+                  {missingIngredients.size > 0 && (
+                    <TouchableOpacity
+                      style={styles.substituteButton}
+                      onPress={confirmSubstitution}
+                      disabled={substituting}
+                      activeOpacity={0.85}
+                    >
+                      {substituting ? (
+                        <ActivityIndicator color={Colors.textInverse} size="small" />
+                      ) : (
+                        <MaterialIcons name="autorenew" size={18} color={Colors.textInverse} />
+                      )}
+                      <Text style={styles.substituteButtonText}>
+                        {substituting ? 'Trocando...' : `Trocar ${missingIngredients.size} ${missingIngredients.size === 1 ? 'ingrediente' : 'ingredientes'}`}
+                      </Text>
+                    </TouchableOpacity>
+                  )}
                 </View>
               )}
 
@@ -498,6 +557,46 @@ const styles = StyleSheet.create({
     color: Colors.text,
     flex: 1,
     lineHeight: 22,
+  },
+  ingredientRowMissing: {
+    opacity: 0.6,
+  },
+  ingredientTextMissing: {
+    textDecorationLine: 'line-through',
+  },
+  missingButton: {
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: Radius.full,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+  },
+  missingButtonActive: {
+    backgroundColor: Colors.warning,
+    borderColor: Colors.warning,
+  },
+  missingButtonText: {
+    fontSize: Typography.sizes.xs,
+    fontWeight: Typography.weights.semibold,
+    color: Colors.textSubtle,
+  },
+  missingButtonTextActive: {
+    color: Colors.textInverse,
+  },
+  substituteButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.sm,
+    backgroundColor: Colors.primary,
+    borderRadius: Radius.md,
+    padding: Spacing.md,
+    marginTop: Spacing.sm,
+  },
+  substituteButtonText: {
+    color: Colors.textInverse,
+    fontWeight: Typography.weights.bold,
+    fontSize: Typography.sizes.sm,
   },
   voiceReadButton: {
     flexDirection: 'row',

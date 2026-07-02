@@ -13,10 +13,30 @@ import { Colors, Typography, Spacing, Radius, Shadows } from '../../constants/th
 interface ShoppingChecklistProps {
   items: ShoppingItem[];
   onAllChecked?: () => void;
+  onSubstitute?: (missingItemNames: string[]) => void;
+  substituting?: boolean;
 }
 
-export function ShoppingChecklist({ items, onAllChecked }: ShoppingChecklistProps) {
+export function ShoppingChecklist({ items, onAllChecked, onSubstitute, substituting }: ShoppingChecklistProps) {
   const [checked, setChecked] = useState<Set<string>>(new Set());
+  const [missing, setMissing] = useState<Set<string>>(new Set());
+
+  const toggleMissing = (id: string) => {
+    setMissing(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const confirmSubstitution = () => {
+    const names = items.filter(i => missing.has(i.id)).map(i => i.name);
+    if (names.length > 0) {
+      onSubstitute?.(names);
+      setMissing(new Set());
+    }
+  };
 
   const toggle = (id: string) => {
     setChecked(prev => {
@@ -69,31 +89,57 @@ export function ShoppingChecklist({ items, onAllChecked }: ShoppingChecklistProp
           </Text>
           {catItems.map(item => {
             const isChecked = checked.has(item.id);
+            const isMissing = missing.has(item.id);
             return (
-              <TouchableOpacity
-                key={item.id}
-                style={[styles.row, isChecked && styles.rowChecked]}
-                onPress={() => toggle(item.id)}
-                activeOpacity={0.75}
-              >
-                <View style={[styles.checkbox, isChecked && styles.checkboxChecked]}>
+              <View key={item.id} style={[styles.row, isChecked && styles.rowChecked, isMissing && styles.rowMissing]}>
+                <TouchableOpacity
+                  style={[styles.checkbox, isChecked && styles.checkboxChecked]}
+                  onPress={() => toggle(item.id)}
+                  disabled={isMissing}
+                  activeOpacity={0.75}
+                >
                   {isChecked && (
                     <MaterialIcons name="check" size={14} color={Colors.textInverse} />
                   )}
-                </View>
-                <View style={styles.rowContent}>
-                  <Text style={[styles.itemName, isChecked && styles.itemNameChecked]}>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.rowContent} onPress={() => toggle(item.id)} disabled={isMissing} activeOpacity={0.75}>
+                  <Text style={[styles.itemName, isChecked && styles.itemNameChecked, isMissing && styles.itemNameMissing]}>
                     {item.name}
                   </Text>
                   <Text style={[styles.itemQty, isChecked && styles.itemQtyChecked]}>
                     {item.quantity}
                   </Text>
-                </View>
-              </TouchableOpacity>
+                </TouchableOpacity>
+                {onSubstitute && (
+                  <TouchableOpacity
+                    style={[styles.missingButton, isMissing && styles.missingButtonActive]}
+                    onPress={() => toggleMissing(item.id)}
+                    activeOpacity={0.75}
+                  >
+                    <Text style={[styles.missingButtonText, isMissing && styles.missingButtonTextActive]}>
+                      {isMissing ? 'Marcado' : 'Não tenho'}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
             );
           })}
         </View>
       ))}
+
+      {missing.size > 0 && (
+        <TouchableOpacity
+          style={styles.substituteButton}
+          onPress={confirmSubstitution}
+          disabled={substituting}
+          activeOpacity={0.85}
+        >
+          <MaterialIcons name="autorenew" size={18} color={Colors.textInverse} />
+          <Text style={styles.substituteButtonText}>
+            {substituting ? 'Trocando...' : `Trocar ${missing.size} ${missing.size === 1 ? 'ingrediente' : 'ingredientes'}`}
+          </Text>
+        </TouchableOpacity>
+      )}
 
       {allChecked && (
         <View style={styles.allCheckedBanner}>
@@ -213,6 +259,45 @@ const styles = StyleSheet.create({
   },
   itemQtyChecked: {
     color: Colors.borderLight,
+  },
+  rowMissing: {
+    backgroundColor: Colors.warning + '15',
+  },
+  itemNameMissing: {
+    color: Colors.textSubtle,
+  },
+  missingButton: {
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: Radius.full,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+  },
+  missingButtonActive: {
+    backgroundColor: Colors.warning,
+    borderColor: Colors.warning,
+  },
+  missingButtonText: {
+    fontSize: Typography.sizes.xs,
+    fontWeight: Typography.weights.semibold,
+    color: Colors.textSubtle,
+  },
+  missingButtonTextActive: {
+    color: Colors.textInverse,
+  },
+  substituteButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.sm,
+    backgroundColor: Colors.primary,
+    borderRadius: Radius.md,
+    padding: Spacing.md,
+  },
+  substituteButtonText: {
+    color: Colors.textInverse,
+    fontWeight: Typography.weights.bold,
+    fontSize: Typography.sizes.sm,
   },
   allCheckedBanner: {
     flexDirection: 'row',

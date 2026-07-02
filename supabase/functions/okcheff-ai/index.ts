@@ -2,10 +2,22 @@ import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { corsHeaders } from '../_shared/cors.ts';
 
-const SYSTEM_PROMPT = `You are OkCheff, a world-class international culinary master and smart assistant. Your mission is to guide users through cooking in a practical and safe manner.
+// ═══════════════════════════════════════════════════════════════
+// MANUAL DE IDENTIDADE DO OKCHEFF — usado em TUDO (busca, receitas, chat, futuro áudio)
+// ═══════════════════════════════════════════════════════════════
+const OKCHEFF_IDENTITY = `You are OkCheff, a master chef with deep expertise across world cuisines (home cooking, professional/haute cuisine, regional and international traditions). Never reveal you are an AI.
 
-## IDENTITY
-You are OkCheff — never reveal you are an AI. You are a seasoned chef with decades of experience in international gastronomy.
+TONE: Warm and welcoming like a home cook, but with the authority and precision of a professional chef. Adapt your language to whoever you're talking to — a beginner with no culinary background or a trained chef — always respectful, never condescending, never robotic.
+
+DIET RULES (STRICT — never violate):
+- Vegan (vegana): NO meat, poultry, fish, seafood, eggs, dairy, honey, or any animal-derived ingredient. Zero exceptions.
+- Vegetarian (vegetariana): NO meat, poultry, fish, or seafood. Eggs and dairy are allowed.
+- Traditional (tradicional): no restriction.
+- If the source recipe doesn't give enough detail to guarantee it fits the requested diet, DO NOT just flag it — actively substitute the problematic ingredient with a fitting alternative (e.g. replace fish sauce with soy sauce + seaweed for vegan) so the final recipe is fully compliant, and briefly note the substitution was made.
+
+COOKING TIPS: Whenever relevant, add small sensory cues to steps to help the cook judge doneness/readiness by feel — e.g. "espete um garfo para ver se está macio", "a massa deve soltar das mãos", "deve soar oco ao bater de leve". Use these naturally, not on every step.`;
+
+const SYSTEM_PROMPT = `${OKCHEFF_IDENTITY}
 
 ## MULTILINGUAL INTELLIGENCE (CRITICAL)
 - Detect the language used by the user in their most recent message immediately.
@@ -67,14 +79,16 @@ async function searchRecipesInCache(supabase: any, ingredients: string[], diet: 
 
 async function generateRecipesWithAI(openaiApiKey: string, ingredients: string[], diet: string, mealType: string, language: string, occasion: string | null) {
   const langNames: Record<string, string> = { pt: 'Brazilian Portuguese', en: 'English', es: 'Spanish', fr: 'French' };
-  const prompt = `Generate 5 recipe cards in ${langNames[language] || 'Brazilian Portuguese'}.
+  const prompt = `${OKCHEFF_IDENTITY}
+
+Generate 5 recipe cards in ${langNames[language] || 'Brazilian Portuguese'}.
 ${ingredients.length > 0 ? 'Available ingredients: ' + ingredients.join(', ') : ''}
-${diet && diet !== 'todas' ? 'Diet: ' + diet : ''}
+${diet && diet !== 'todas' ? 'Diet: ' + diet + ' — follow the strict diet rules above without exception.' : ''}
 ${mealType && mealType !== 'todas' ? 'Meal type: ' + mealType : ''}
 ${occasion ? 'Occasion: ' + occasion : ''}
 Return ONLY a valid JSON array with exactly 5 recipes. Each recipe:
 {"name":"","description":"","time_minutes":0,"difficulty":"facil","servings":0,"diet":"","meal_type":"","ingredients":[],"steps":[],"shopping_list":[],"tips":[],"tags":[]}
-IMPORTANT: in "steps", always write out the exact quantity of each ingredient used in that step (e.g. "Misture 2 dentes de alho picados com 50g de manteiga"), never just the ingredient name alone.`;
+IMPORTANT: in "steps", always write out the exact quantity of each ingredient used in that step (e.g. "Misture 2 dentes de alho picados com 50g de manteiga"), never just the ingredient name alone. Include sensory doneness cues where natural.`;
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: { 'Authorization': 'Bearer ' + openaiApiKey, 'Content-Type': 'application/json' },
@@ -120,6 +134,33 @@ async function getUserPackage(supabase: any, userId: string) {
   return data;
 }
 
+async function substituteIngredients(openaiApiKey: string, recipe: any, missingIngredients: string[], language: string) {
+  const langNames: Record<string, string> = { pt: 'Brazilian Portuguese', en: 'English', es: 'Spanish', fr: 'French' };
+  const prompt = `${OKCHEFF_IDENTITY}
+
+The user is cooking this recipe but is MISSING these ingredients: ${missingIngredients.join(', ')}.
+
+Current recipe (in ${langNames[language] || 'Brazilian Portuguese'}):
+Name: ${recipe.name}
+Ingredients: ${JSON.stringify(recipe.ingredients)}
+Steps: ${JSON.stringify(recipe.steps)}
+Shopping list: ${JSON.stringify(recipe.shopping_list ?? recipe.shoppingList)}
+
+Rewrite the recipe replacing ONLY the missing ingredients with sensible substitutes (or removing them if no substitute is needed), adjusting the ingredients list, steps, and shopping list accordingly. Keep everything else the same. Respond ONLY with valid JSON in this exact shape:
+{"ingredients":[],"steps":[],"shopping_list":[],"substitutionNotes":""}
+substitutionNotes should be one short friendly sentence (in ${langNames[language] || 'Brazilian Portuguese'}) explaining what was swapped.`;
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Authorization': 'Bearer ' + openaiApiKey, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ model: 'gpt-4.1-nano', messages: [{ role: 'user', content: prompt }], max_tokens: 2000, temperature: 0.7 }),
+  });
+  if (!response.ok) throw new Error('OpenAI error: ' + response.status);
+  const data = await response.json();
+  const text = data.choices?.[0]?.message?.content ?? '{}';
+  const clean = text.replace(/```json|```/g, '').trim();
+  return JSON.parse(clean);
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   try {
@@ -147,6 +188,16 @@ serve(async (req) => {
         recipes = await saveRecipesToCache(publicClient, generated, language, occasion);
       }
       return new Response(JSON.stringify({ recipes }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    // ── MODO SUBSTITUTE: não exige login — troca ingrediente faltante ─────────────
+    if (mode === 'substitute') {
+      const { recipe, missingIngredients = [], language = 'pt' } = body;
+      if (!recipe || missingIngredients.length === 0) {
+        return new Response(JSON.stringify({ error: 'Missing recipe or missingIngredients' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+      const result = await substituteIngredients(openaiApiKey, recipe, missingIngredients, language);
+      return new Response(JSON.stringify(result), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
     // ── MODOS QUE EXIGEM LOGIN: unlock e chat ──────────────────────────────

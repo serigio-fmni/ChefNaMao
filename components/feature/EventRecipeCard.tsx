@@ -5,6 +5,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   Animated,
+  Alert,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -12,6 +13,7 @@ import { Recipe, EVENT_OCCASION_LABELS } from '../../constants/data';
 import { Colors, Typography, Spacing, Radius, Shadows } from '../../constants/theme';
 import { useApp } from '../../hooks/useApp';
 import { ShoppingChecklist } from './ShoppingChecklist';
+import { substituteIngredients } from '../../services/recipeService';
 
 interface EventRecipeCardProps {
   recipe: Recipe;
@@ -29,10 +31,24 @@ const DIFFICULTY_COLORS: Record<string, string> = {
   dificil: Colors.error,
 };
 
-export function EventRecipeCard({ recipe, onStartCooking }: EventRecipeCardProps) {
+export function EventRecipeCard({ recipe: initialRecipe, onStartCooking }: EventRecipeCardProps) {
   const { isEventRecipeSaved, saveEventRecipe, removeEventRecipe } = useApp();
+  const [recipe, setRecipe] = useState(initialRecipe);
   const [expanded, setExpanded] = useState(false);
   const [shoppingDone, setShoppingDone] = useState(false);
+  const [substituting, setSubstituting] = useState(false);
+
+  const handleSubstitute = async (missingNames: string[]) => {
+    setSubstituting(true);
+    const result = await substituteIngredients(recipe, missingNames);
+    setSubstituting(false);
+    if (result) {
+      setRecipe(result.recipe);
+      Alert.alert('Receita ajustada', result.note || 'Os ingredientes foram trocados.');
+    } else {
+      Alert.alert('Ops', 'Não consegui trocar agora. Tente novamente.');
+    }
+  };
 
   const saved = isEventRecipeSaved(recipe.id);
 
@@ -149,6 +165,8 @@ export function EventRecipeCard({ recipe, onStartCooking }: EventRecipeCardProps
               <ShoppingChecklist
                 items={recipe.shoppingList}
                 onAllChecked={() => setShoppingDone(true)}
+                onSubstitute={handleSubstitute}
+                substituting={substituting}
               />
             )}
           </>

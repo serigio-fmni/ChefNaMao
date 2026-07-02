@@ -136,3 +136,37 @@ export async function sendChatMessage(messages: Array<{ role: string; content: s
 export function getFeaturedRecipes(isPremium: boolean): Recipe[] {
   return MOCK_RECIPES.filter(r => !r.isPremium || isPremium).slice(0, 4);
 }
+
+// Troca ingredientes que o usuário não tem, ajustando ingredientes, passos e lista de compras.
+export async function substituteIngredients(
+  recipe: Recipe,
+  missingIngredientNames: string[]
+): Promise<{ recipe: Recipe; note: string } | null> {
+  try {
+    const result = await callEdgeFunction({
+      mode: 'substitute',
+      recipe: {
+        name: recipe.name,
+        ingredients: recipe.ingredients,
+        steps: recipe.steps,
+        shopping_list: recipe.shoppingList,
+      },
+      missingIngredients: missingIngredientNames,
+      language: 'pt',
+    });
+    if (result?.ingredients) {
+      return {
+        recipe: {
+          ...recipe,
+          ingredients: result.ingredients,
+          steps: result.steps ?? recipe.steps,
+          shoppingList: normalizeShoppingList(result.shopping_list),
+        },
+        note: result.substitutionNotes ?? '',
+      };
+    }
+  } catch (e) {
+    console.warn('Erro ao trocar ingrediente:', e);
+  }
+  return null;
+}
