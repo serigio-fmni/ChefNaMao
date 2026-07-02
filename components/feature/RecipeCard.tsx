@@ -47,6 +47,8 @@ export function RecipeCard({ recipe: initialRecipe, onPress, compact = false }: 
   const isLocked = recipe.isPremium && !profile.isPremium;
   const [expanded, setExpanded] = useState(false);
   const [substituting, setSubstituting] = useState(false);
+  const [shoppingDone, setShoppingDone] = useState(false);
+  const hasShoppingList = !!recipe.shoppingList && recipe.shoppingList.length > 0;
 
   const handleSubstitute = async (missingNames: string[]) => {
     setSubstituting(true);
@@ -104,7 +106,7 @@ export function RecipeCard({ recipe: initialRecipe, onPress, compact = false }: 
   }
 
   return (
-    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.85}>
+    <View style={styles.card}>
       {/* Imagem */}
       <View style={styles.imageContainer}>
         <Image
@@ -199,17 +201,43 @@ export function RecipeCard({ recipe: initialRecipe, onPress, compact = false }: 
                 color={Colors.primary}
               />
             </TouchableOpacity>
-            {expanded && <ShoppingChecklist items={recipe.shoppingList} onSubstitute={handleSubstitute} substituting={substituting} />}
+            {expanded && (
+              <ShoppingChecklist
+                items={recipe.shoppingList}
+                onSubstitute={handleSubstitute}
+                substituting={substituting}
+                onAllChecked={() => setShoppingDone(true)}
+              />
+            )}
           </>
         )}
 
-        {/* Botão ver receita completa */}
-        <View style={styles.unlockHint}>
-          <MaterialIcons name="lock-outline" size={13} color={Colors.primary} />
-          <Text style={styles.unlockHintText}>Toque para ver a receita completa</Text>
-        </View>
+        {/* Botão iniciar / ver receita completa — igual nas 3 abas */}
+        <TouchableOpacity
+          style={[
+            styles.startButton,
+            hasShoppingList && !shoppingDone ? styles.startButtonDisabled : styles.startButtonActive,
+          ]}
+          onPress={onPress}
+          disabled={hasShoppingList && !shoppingDone}
+          activeOpacity={0.85}
+        >
+          <MaterialIcons
+            name={hasShoppingList && !shoppingDone ? 'lock-outline' : 'play-circle-filled'}
+            size={18}
+            color={hasShoppingList && !shoppingDone ? Colors.textSubtle : Colors.textInverse}
+          />
+          <Text
+            style={[
+              styles.startButtonText,
+              hasShoppingList && !shoppingDone ? styles.startButtonTextDisabled : styles.startButtonTextActive,
+            ]}
+          >
+            {hasShoppingList && !shoppingDone ? 'Confira a lista de compras primeiro' : 'Ver receita completa'}
+          </Text>
+        </TouchableOpacity>
       </View>
-    </TouchableOpacity>
+    </View>
   );
 }
 
@@ -360,6 +388,35 @@ const styles = StyleSheet.create({
     fontSize: Typography.sizes.xs,
     color: Colors.primary,
     fontWeight: Typography.weights.medium,
+  },
+  startButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.sm,
+    borderRadius: Radius.md,
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.xl,
+    marginTop: Spacing.xs,
+  },
+  startButtonActive: {
+    backgroundColor: Colors.primary,
+    ...Shadows.sm,
+  },
+  startButtonDisabled: {
+    backgroundColor: Colors.surfaceDark,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  startButtonText: {
+    fontSize: Typography.sizes.base,
+    fontWeight: Typography.weights.bold,
+  },
+  startButtonTextActive: {
+    color: Colors.textInverse,
+  },
+  startButtonTextDisabled: {
+    color: Colors.textSubtle,
   },
   // Compact styles
   compactCard: {
