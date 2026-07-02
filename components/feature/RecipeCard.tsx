@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { Image } from 'expo-image';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Recipe } from '../../constants/data';
 import { Colors, Typography, Spacing, Radius, Shadows } from '../../constants/theme';
 import { useApp } from '../../hooks/useApp';
 import { ShoppingChecklist } from './ShoppingChecklist';
+import { substituteIngredients } from '../../services/recipeService';
 
 interface RecipeCardProps {
   recipe: Recipe;
@@ -39,11 +40,25 @@ const DIET_COLORS: Record<string, string> = {
 
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=600&q=80';
 
-export function RecipeCard({ recipe, onPress, compact = false }: RecipeCardProps) {
+export function RecipeCard({ recipe: initialRecipe, onPress, compact = false }: RecipeCardProps) {
   const { isRecipeSaved, saveRecipe, removeRecipe, profile } = useApp();
+  const [recipe, setRecipe] = useState(initialRecipe);
   const saved = isRecipeSaved(recipe.id);
   const isLocked = recipe.isPremium && !profile.isPremium;
   const [expanded, setExpanded] = useState(false);
+  const [substituting, setSubstituting] = useState(false);
+
+  const handleSubstitute = async (missingNames: string[]) => {
+    setSubstituting(true);
+    const result = await substituteIngredients(recipe, missingNames);
+    setSubstituting(false);
+    if (result) {
+      setRecipe(result.recipe);
+      Alert.alert('Receita ajustada', result.note || 'Os ingredientes foram trocados.');
+    } else {
+      Alert.alert('Ops', 'Não consegui trocar agora. Tente novamente.');
+    }
+  };
 
   const handleSave = (e: any) => {
     e.stopPropagation();
@@ -184,7 +199,7 @@ export function RecipeCard({ recipe, onPress, compact = false }: RecipeCardProps
                 color={Colors.primary}
               />
             </TouchableOpacity>
-            {expanded && <ShoppingChecklist items={recipe.shoppingList} />}
+            {expanded && <ShoppingChecklist items={recipe.shoppingList} onSubstitute={handleSubstitute} substituting={substituting} />}
           </>
         )}
 
