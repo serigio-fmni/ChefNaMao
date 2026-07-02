@@ -23,6 +23,24 @@ You are OkCheff — never reveal you are an AI. You are a seasoned chef with dec
 - Never suggest dangerous techniques or harmful ingredient combinations.
 - If the user asks about non-cooking topics, gently redirect: "I specialize in cooking — let us focus on your recipe!"`;
 
+// O app envia a ocasião em snake_case (ex: 'dia_das_maes'), mas as receitas já
+// salvas no banco (populadas via TheMealDB) usam o nome em português (ex: 'Dia das Mães').
+// Esse mapa traduz para o mesmo formato usado no banco, para achar o cache corretamente.
+const OCCASION_LABELS: Record<string, string> = {
+  dia_das_maes: 'Dia das Mães',
+  jantar_romantico: 'Jantar Romântico',
+  aniversario: 'Aniversário',
+  natal: 'Natal',
+  pascoa: 'Páscoa',
+  churrasco: 'Churrasco',
+  ano_novo: 'Réveillon',
+  dia_dos_pais: 'Dia dos Pais',
+};
+function normalizeOccasion(occasion: string | null): string | null {
+  if (!occasion) return null;
+  return OCCASION_LABELS[occasion] ?? occasion;
+}
+
 async function searchRecipesInCache(supabase: any, ingredients: string[], diet: string, mealType: string, language: string, occasion: string | null) {
   let query = supabase.from('recipes').select('*').eq('is_cache', true).eq('language', language);
   if (diet && diet !== 'todas') query = query.eq('diet', diet);
@@ -55,7 +73,8 @@ ${diet && diet !== 'todas' ? 'Diet: ' + diet : ''}
 ${mealType && mealType !== 'todas' ? 'Meal type: ' + mealType : ''}
 ${occasion ? 'Occasion: ' + occasion : ''}
 Return ONLY a valid JSON array with exactly 5 recipes. Each recipe:
-{"name":"","description":"","time_minutes":0,"difficulty":"facil","servings":0,"diet":"","meal_type":"","ingredients":[],"steps":[],"shopping_list":[],"tips":[],"tags":[]}`;
+{"name":"","description":"","time_minutes":0,"difficulty":"facil","servings":0,"diet":"","meal_type":"","ingredients":[],"steps":[],"shopping_list":[],"tips":[],"tags":[]}
+IMPORTANT: in "steps", always write out the exact quantity of each ingredient used in that step (e.g. "Misture 2 dentes de alho picados com 50g de manteiga"), never just the ingredient name alone.`;
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: { 'Authorization': 'Bearer ' + openaiApiKey, 'Content-Type': 'application/json' },
@@ -69,9 +88,30 @@ Return ONLY a valid JSON array with exactly 5 recipes. Each recipe:
 }
 
 async function saveRecipesToCache(supabase: any, recipes: any[], language: string, occasion: string | null) {
+  const unsplashKey = Deno.env.get('UNSPLASH_ACCESS_KEY');
+  const saved: any[] = [];
   for (const recipe of recipes) {
     const id = 'ai_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9) + '_' + language;
-    await supabase.from('recipes').upsert({ id, ...recipe, language, occasion, is_cache: true, use_count: 0 });
+    let image = recipe.image;
+    if (!image && unsplashKey) {
+      image = await fetchUnsplashImage(recipe.name, unsplashKey);
+    }
+    const withId = { id, ...recipe, image, language, occasion, is_cache: true, use_count: 0 };
+    await supabase.from('recipes').upsert(withId);
+    saved.push(withId);
+  }
+  return saved;
+}
+
+async function fetchUnsplashImage(query: string, accessKey: string): Promise<string | null> {
+  try {
+    const url = 'https://api.unsplash.com/search/photos?query=' + encodeURIComponent(query + ' food dish') + '&per_page=1&orientation=landscape';
+    const res = await fetch(url, { headers: { Authorization: 'Client-ID ' + accessKey } });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.results?.[0]?.urls?.regular ?? null;
+  } catch {
+    return null;
   }
 }
 
@@ -99,11 +139,12 @@ serve(async (req) => {
 
     // ── MODO SEARCH: não exige login (busca é gratuita) ───────────────────
     if (mode === 'search') {
-      const { ingredients = [], diet = 'todas', mealType = 'todas', occasion = null, language = 'pt' } = body;
+      const { ingredients = [], diet = 'todas', mealType = 'todas', occasion: rawOccasion = null, language = 'pt' } = body;
+      const occasion = normalizeOccasion(rawOccasion);
       let recipes = await searchRecipesInCache(publicClient, ingredients, diet, mealType, language, occasion);
       if (recipes.length === 0) {
-        recipes = await generateRecipesWithAI(openaiApiKey, ingredients, diet, mealType, language, occasion);
-        await saveRecipesToCache(publicClient, recipes, language, occasion);
+        const generated = await generateRecipesWithAI(openaiApiKey, ingredients, diet, mealType, language, occasion);
+        recipes = await saveRecipesToCache(publicClient, generated, language, occasion);
       }
       return new Response(JSON.stringify({ recipes }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }

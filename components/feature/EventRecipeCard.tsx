@@ -112,6 +112,20 @@ export function EventRecipeCard({ recipe, onStartCooking }: EventRecipeCardProps
           </View>
         </View>
 
+        {/* Ingredientes principais */}
+        {recipe.ingredients && recipe.ingredients.length > 0 && (
+          <View style={styles.ingredientsSection}>
+            <View style={styles.ingredientsHeader}>
+              <MaterialIcons name="kitchen" size={13} color={Colors.textSubtle} />
+              <Text style={styles.ingredientsLabel}>Ingredientes principais:</Text>
+            </View>
+            <Text style={styles.ingredientsListText} numberOfLines={2}>
+              {recipe.ingredients.slice(0, 5).join(' · ')}
+              {recipe.ingredients.length > 5 ? ` +${recipe.ingredients.length - 5} mais` : ''}
+            </Text>
+          </View>
+        )}
+
         {/* Shopping list toggle */}
         {recipe.shoppingList && recipe.shoppingList.length > 0 && (
           <>
@@ -294,6 +308,29 @@ const styles = StyleSheet.create({
     fontSize: Typography.sizes.sm,
     fontWeight: Typography.weights.semibold,
     color: Colors.primary,
+  },
+  ingredientsSection: {
+    backgroundColor: Colors.background,
+    borderRadius: Radius.md,
+    padding: Spacing.sm,
+    gap: 4,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  ingredientsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  ingredientsLabel: {
+    fontSize: Typography.sizes.xs,
+    color: Colors.textSubtle,
+    fontWeight: Typography.weights.semibold,
+  },
+  ingredientsListText: {
+    fontSize: Typography.sizes.xs,
+    color: Colors.textSecondary,
+    lineHeight: 18,
   },
   startButton: {
     flexDirection: 'row',

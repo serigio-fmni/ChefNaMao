@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Image } from 'expo-image';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Recipe } from '../../constants/data';
 import { Colors, Typography, Spacing, Radius, Shadows } from '../../constants/theme';
 import { useApp } from '../../hooks/useApp';
+import { ShoppingChecklist } from './ShoppingChecklist';
 
 interface RecipeCardProps {
   recipe: Recipe;
@@ -42,6 +43,7 @@ export function RecipeCard({ recipe, onPress, compact = false }: RecipeCardProps
   const { isRecipeSaved, saveRecipe, removeRecipe, profile } = useApp();
   const saved = isRecipeSaved(recipe.id);
   const isLocked = recipe.isPremium && !profile.isPremium;
+  const [expanded, setExpanded] = useState(false);
 
   const handleSave = (e: any) => {
     e.stopPropagation();
@@ -162,6 +164,28 @@ export function RecipeCard({ recipe, onPress, compact = false }: RecipeCardProps
               {recipe.ingredients.length > 5 ? ` +${recipe.ingredients.length - 5} mais` : ''}
             </Text>
           </View>
+        )}
+
+        {/* Lista de compras */}
+        {recipe.shoppingList && recipe.shoppingList.length > 0 && (
+          <>
+            <TouchableOpacity
+              style={styles.toggleButton}
+              onPress={(e: any) => { e.stopPropagation(); setExpanded(v => !v); }}
+              activeOpacity={0.8}
+            >
+              <MaterialIcons name="shopping-cart" size={16} color={Colors.primary} />
+              <Text style={styles.toggleText}>
+                {expanded ? 'Ocultar' : 'Ver'} Lista de Compras ({recipe.shoppingList.length} itens)
+              </Text>
+              <MaterialIcons
+                name={expanded ? 'keyboard-arrow-up' : 'keyboard-arrow-down'}
+                size={18}
+                color={Colors.primary}
+              />
+            </TouchableOpacity>
+            {expanded && <ShoppingChecklist items={recipe.shoppingList} />}
+          </>
         )}
 
         {/* Botão ver receita completa */}
@@ -293,6 +317,22 @@ const styles = StyleSheet.create({
     fontSize: Typography.sizes.xs,
     color: Colors.textSecondary,
     lineHeight: 18,
+  },
+  toggleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    backgroundColor: Colors.primary + '12',
+    borderRadius: Radius.md,
+    padding: Spacing.md,
+    borderWidth: 1,
+    borderColor: Colors.primary + '30',
+  },
+  toggleText: {
+    flex: 1,
+    fontSize: Typography.sizes.sm,
+    fontWeight: Typography.weights.semibold,
+    color: Colors.primary,
   },
   unlockHint: {
     flexDirection: 'row',
