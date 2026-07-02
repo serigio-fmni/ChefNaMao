@@ -144,16 +144,6 @@ export default function HomeScreen() {
             transition={300}
           />
           <View style={styles.heroOverlay} />
-          {/* Search shortcut button */}
-          <TouchableOpacity
-            style={styles.heroSearchBtn}
-            onPress={handleOpenSearch}
-            activeOpacity={0.85}
-          >
-            <MaterialIcons name="search" size={20} color={Colors.textInverse} />
-            <Text style={styles.heroSearchText}>Busca avançada</Text>
-            <MaterialIcons name="tune" size={16} color={'rgba(255,255,255,0.7)'} />
-          </TouchableOpacity>
           <View style={styles.heroContent}>
             {profile.isPremium && (
               <View style={styles.premiumIndicator}>
@@ -213,6 +203,14 @@ export default function HomeScreen() {
               >
                 Inspiração
               </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.segmentButton}
+              onPress={handleOpenSearch}
+              activeOpacity={0.8}
+            >
+              <MaterialIcons name="search" size={16} color={Colors.textSubtle} />
+              <Text style={styles.segmentText}>Prato Específico</Text>
             </TouchableOpacity>
           </View>
         </View>

@@ -151,11 +151,12 @@ Shopping list: ${JSON.stringify(recipe.shopping_list ?? recipe.shoppingList)}
 
 Rewrite the recipe replacing EVERY SINGLE missing ingredient listed above with a DIFFERENT sensible substitute — this is MANDATORY for all of them, with zero exceptions, even if an item already looks like a substitute or already looks fine to you. Never leave a listed item unchanged. The final "ingredients" and "shopping_list" arrays must contain ONLY the final, current version of the recipe — REPLACE each missing item in place, do NOT add the new version as an extra line while keeping the old one. No duplicates, no leftover old entries. Adjust the steps to match. Keep everything else the same. Respond ONLY with valid JSON in this exact shape:
 {"ingredients":[],"steps":[],"shopping_list":[],"substitutionNotes":""}
+Be concise — keep step text similar length to the original, no extra commentary outside the JSON.
 substitutionNotes should be one short friendly sentence (in ${langNames[language] || 'Brazilian Portuguese'}) explaining what was swapped.`;
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: { 'Authorization': 'Bearer ' + openaiApiKey, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ model: 'gpt-4.1-nano', messages: [{ role: 'user', content: prompt }], max_tokens: 2000, temperature: 0.7 }),
+    body: JSON.stringify({ model: 'gpt-4.1-nano', messages: [{ role: 'user', content: prompt }], max_tokens: 1000, temperature: 0.5 }),
   });
   if (!response.ok) throw new Error('OpenAI error: ' + response.status);
   const data = await response.json();

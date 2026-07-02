@@ -495,7 +495,7 @@ export default function SearchScreen() {
       {!hasSearched && !isLoading && history.length === 0 && (
         <View style={styles.emptyState}>
           <MaterialIcons name="search" size={56} color={Colors.border} />
-          <Text style={styles.emptyTitle}>Busca Avançada</Text>
+          <Text style={styles.emptyTitle}>Prato Específico</Text>
           <Text style={styles.emptySubtitle}>
             Filtre por tempo de preparo, dificuldade e dieta para encontrar a receita perfeita.
           </Text>
