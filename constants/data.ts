@@ -1,7 +1,7 @@
 // Chef Na Mão - Mock Data & Recipes Database
 
 export type DietType = 'tradicional' | 'vegana' | 'vegetariana';
-export type MealType = 'rapida' | 'classica' | 'internacional' | 'regional';
+export type MealType = 'rapida' | 'classica' | 'internacional' | 'regional' | 'sobremesa';
 export type DishType = 'cafe' | 'almoco' | 'jantar' | 'lanche' | 'sobremesa';
 export type Difficulty = 'facil' | 'medio' | 'dificil';
 export type EventOccasion =
@@ -276,6 +276,7 @@ export const MEAL_TYPE_LABELS: Record<MealType, string> = {
   classica: 'Clássica',
   internacional: 'Internacional',
   regional: 'Regional',
+  sobremesa: 'Sobremesa',
 };
 
 export const DISH_TYPE_LABELS: Record<DishType, string> = {

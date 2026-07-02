@@ -6,6 +6,7 @@ export interface RecipeFilters {
   diet?: DietType | 'todas';
   mealType?: MealType | 'todas';
   isPremium: boolean;
+  dishName?: string;
 }
 
 export interface InspirationFilters {
@@ -74,6 +75,7 @@ export async function generateRecipes(filters: RecipeFilters): Promise<Recipe[]>
       ingredients: filters.ingredients,
       diet: filters.diet ?? 'todas',
       mealType: filters.mealType ?? 'todas',
+      dishName: filters.dishName ?? null,
       language: 'pt',
     });
     if (result?.recipes && result.recipes.length > 0) {

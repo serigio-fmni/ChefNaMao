@@ -53,13 +53,16 @@ function normalizeOccasion(occasion: string | null): string | null {
   return OCCASION_LABELS[occasion] ?? occasion;
 }
 
-async function searchRecipesInCache(supabase: any, ingredients: string[], diet: string, mealType: string, language: string, occasion: string | null) {
+async function searchRecipesInCache(supabase: any, ingredients: string[], diet: string, mealType: string, language: string, occasion: string | null, dishName: string | null) {
   let query = supabase.from('recipes').select('*').eq('is_cache', true).eq('language', language);
   if (diet && diet !== 'todas') query = query.eq('diet', diet);
   if (mealType && mealType !== 'todas') query = query.eq('meal_type', mealType);
   if (occasion) query = query.eq('occasion', occasion);
+  if (dishName) query = query.ilike('name', `%${dishName}%`);
   const { data, error } = await query.limit(50);
   if (error || !data || data.length === 0) return [];
+
+  if (dishName) return data.slice(0, 5);
 
   if (ingredients && ingredients.length > 0) {
     const normalize = (t: string) => t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
@@ -77,11 +80,11 @@ async function searchRecipesInCache(supabase: any, ingredients: string[], diet: 
   return data.sort(() => Math.random() - 0.5).slice(0, 5);
 }
 
-async function generateRecipesWithAI(openaiApiKey: string, ingredients: string[], diet: string, mealType: string, language: string, occasion: string | null) {
+async function generateRecipesWithAI(openaiApiKey: string, ingredients: string[], diet: string, mealType: string, language: string, occasion: string | null, dishName: string | null) {
   const langNames: Record<string, string> = { pt: 'Brazilian Portuguese', en: 'English', es: 'Spanish', fr: 'French' };
   const prompt = `${OKCHEFF_IDENTITY}
 
-Generate 5 recipe cards in ${langNames[language] || 'Brazilian Portuguese'}.
+${dishName ? `Generate 5 recipe cards for dishes matching this specific name/dish the user searched for: "${dishName}". All 5 should be variations or close matches of this exact dish, in ${langNames[language] || 'Brazilian Portuguese'}.` : `Generate 5 recipe cards in ${langNames[language] || 'Brazilian Portuguese'}.`}
 ${ingredients.length > 0 ? 'Available ingredients: ' + ingredients.join(', ') : ''}
 ${diet && diet !== 'todas' ? 'Diet: ' + diet + ' — follow the strict diet rules above without exception.' : ''}
 ${mealType && mealType !== 'todas' ? 'Meal type: ' + mealType : ''}
@@ -146,7 +149,7 @@ Ingredients: ${JSON.stringify(recipe.ingredients)}
 Steps: ${JSON.stringify(recipe.steps)}
 Shopping list: ${JSON.stringify(recipe.shopping_list ?? recipe.shoppingList)}
 
-Rewrite the recipe replacing ONLY the missing ingredients with sensible substitutes (or removing them if no substitute is needed), adjusting the ingredients list, steps, and shopping list accordingly. Keep everything else the same. Respond ONLY with valid JSON in this exact shape:
+Rewrite the recipe replacing EVERY SINGLE missing ingredient listed above with a DIFFERENT sensible substitute — this is MANDATORY for all of them, with zero exceptions, even if an item already looks like a substitute or already looks fine to you. Never leave a listed item unchanged. The final "ingredients" and "shopping_list" arrays must contain ONLY the final, current version of the recipe — REPLACE each missing item in place, do NOT add the new version as an extra line while keeping the old one. No duplicates, no leftover old entries. Adjust the steps to match. Keep everything else the same. Respond ONLY with valid JSON in this exact shape:
 {"ingredients":[],"steps":[],"shopping_list":[],"substitutionNotes":""}
 substitutionNotes should be one short friendly sentence (in ${langNames[language] || 'Brazilian Portuguese'}) explaining what was swapped.`;
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -180,11 +183,11 @@ serve(async (req) => {
 
     // ── MODO SEARCH: não exige login (busca é gratuita) ───────────────────
     if (mode === 'search') {
-      const { ingredients = [], diet = 'todas', mealType = 'todas', occasion: rawOccasion = null, language = 'pt' } = body;
+      const { ingredients = [], diet = 'todas', mealType = 'todas', occasion: rawOccasion = null, language = 'pt', dishName = null } = body;
       const occasion = normalizeOccasion(rawOccasion);
-      let recipes = await searchRecipesInCache(publicClient, ingredients, diet, mealType, language, occasion);
+      let recipes = await searchRecipesInCache(publicClient, ingredients, diet, mealType, language, occasion, dishName);
       if (recipes.length === 0) {
-        const generated = await generateRecipesWithAI(openaiApiKey, ingredients, diet, mealType, language, occasion);
+        const generated = await generateRecipesWithAI(openaiApiKey, ingredients, diet, mealType, language, occasion, dishName);
         recipes = await saveRecipesToCache(publicClient, generated, language, occasion);
       }
       return new Response(JSON.stringify({ recipes }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });

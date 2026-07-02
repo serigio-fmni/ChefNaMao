@@ -39,6 +39,7 @@ const MEAL_OPTIONS: Array<{ value: MealType | 'todas'; label: string }> = [
   { value: 'classica', label: 'Clássica' },
   { value: 'internacional', label: 'Internacional' },
   { value: 'regional', label: 'Regional' },
+  { value: 'sobremesa', label: 'Sobremesa' },
 ];
 
 type HomeTab = 'geladeira' | 'inspiracao';

@@ -137,12 +137,9 @@ export default function SearchScreen() {
     setHasSearched(true);
 
     try {
-      const ingredients = searchQuery
-        ? searchQuery.split(/[,\s]+/).map(s => s.trim()).filter(Boolean)
-        : [];
-
       const results = await generateRecipes({
-        ingredients,
+        ingredients: [],
+        dishName: searchQuery || undefined,
         diet,
         mealType: 'todas',
         isPremium: profile.isPremium,
@@ -227,7 +224,7 @@ export default function SearchScreen() {
           <TextInput
             ref={inputRef}
             style={styles.searchInput}
-            placeholder="Buscar ingredientes, receitas..."
+            placeholder="Buscar pelo nome do prato..."
             placeholderTextColor={Colors.textSubtle}
             value={query}
             onChangeText={setQuery}
