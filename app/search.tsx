@@ -160,6 +160,8 @@ export default function SearchScreen() {
       };
       await addSearchHistory(historyEntry);
       await loadHistory();
+      setShowFilters(false);
+      Animated.spring(filterAnim, { toValue: 0, useNativeDriver: false, tension: 80, friction: 10 }).start();
     } catch {
       setAllResults([]);
       setDisplayResults([]);
