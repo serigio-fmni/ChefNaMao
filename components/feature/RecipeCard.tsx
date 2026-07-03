@@ -109,14 +109,6 @@ export function RecipeCard({ recipe: initialRecipe, onPress, compact = false }: 
           contentFit="cover"
           transition={200}
         />
-        {isLocked && (
-          <View style={styles.lockOverlayFull}>
-            <View style={styles.lockBadge}>
-              <MaterialIcons name="lock" size={14} color={Colors.premium} />
-              <Text style={styles.lockText}>Premium</Text>
-            </View>
-          </View>
-        )}
         {/* Badge de dieta */}
         {diet && DIET_LABELS[diet] && (
           <View style={[styles.dietBadge, { backgroundColor: DIET_COLORS[diet] + 'DD' }]}>
