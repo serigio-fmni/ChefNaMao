@@ -16,6 +16,7 @@ import { useRouter } from 'expo-router';
 import { Colors, Typography, Spacing, Radius, Shadows } from '../../constants/theme';
 import { useApp } from '../../hooks/useApp';
 import { DISH_TYPE_LABELS, DISH_TYPE_ICONS, EVENT_OCCASION_LABELS } from '../../constants/data';
+import { useStrings } from '../../constants/i18n';
 
 const DIFFICULTY_LABELS: Record<string, string> = {
   facil: 'Fácil',
@@ -34,6 +35,7 @@ export default function NotebookScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { savedRecipes, removeRecipe, eventRecipes, removeEventRecipe, profile } = useApp();
+  const s = useStrings();
   const [activeTab, setActiveTab] = useState<NotebookTab>('ideias');
   const [alertState, setAlertState] = useState<{
     visible: boolean;
@@ -52,15 +54,11 @@ export default function NotebookScreen() {
       setAlertState({ visible: true, id, name, isEvent });
     } else {
       Alert.alert(
-        'Remover receita',
-        `Deseja remover "${name}" do seu caderno?`,
+        s.deleteRecipe,
+        s.deleteRecipeConfirm.replace('{name}', name),
         [
-          { text: 'Cancelar', style: 'cancel' },
-          {
-            text: 'Remover',
-            style: 'destructive',
-            onPress: () => (isEvent ? removeEventRecipe(id) : removeRecipe(id)),
-          },
+          { text: s.cancel, style: 'cancel' },
+          { text: s.remove, style: 'destructive', onPress: () => (isEvent ? removeEventRecipe(id) : removeRecipe(id)) },
         ]
       );
     }
@@ -80,11 +78,11 @@ export default function NotebookScreen() {
       {/* Header */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.headerTitle}>Meu Caderno</Text>
+          <Text style={styles.headerTitle}>{s.notebookTitle}</Text>
           <Text style={styles.headerSubtitle}>
             {activeTab === 'receitas'
-              ? `${savedRecipes.length} ${savedRecipes.length === 1 ? 'receita salva' : 'receitas salvas'}${!profile.isPremium ? ' · Limite: 5' : ''}`
-              : `${eventRecipes.length} ${eventRecipes.length === 1 ? 'evento salvo' : 'eventos salvos'}`}
+            ? `${savedRecipes.length} ${savedRecipes.length === 1 ? s.notebookRecipeSaved : s.notebookRecipesSaved}${!profile.isPremium ? ` · ${s.notebookLimit}` : ''}`
+            : `${eventRecipes.length} ${eventRecipes.length === 1 ? s.notebookEventSaved : s.notebookEventsSaved}`}
           </Text>
         </View>
         <View style={styles.headerBadge}>
@@ -103,9 +101,7 @@ export default function NotebookScreen() {
             size={16}
             color={activeTab === 'ideias' ? Colors.primary : Colors.textSubtle}
           />
-          <Text style={[styles.tabText, activeTab === 'ideias' && styles.tabTextActive]}>
-            Ideias
-          </Text>
+          <Text style={[styles.tabText, activeTab === 'ideias' && styles.tabTextActive]}>{s.notebookTabIdeas}</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.tab, activeTab === 'receitas' && styles.tabActive]}
@@ -116,9 +112,7 @@ export default function NotebookScreen() {
             size={16}
             color={activeTab === 'receitas' ? Colors.primary : Colors.textSubtle}
           />
-          <Text style={[styles.tabText, activeTab === 'receitas' && styles.tabTextActive]}>
-            Receitas
-          </Text>
+          <Text style={[styles.tabText, activeTab === 'receitas' && styles.tabTextActive]}>{s.notebookTabRecipes}</Text>
           {savedRecipes.filter((r: any) => r.isUnlocked).length > 0 && (
             <View style={[styles.tabBadge, activeTab === 'receitas' && styles.tabBadgeActive]}>
               <Text style={[styles.tabBadgeText, activeTab === 'receitas' && styles.tabBadgeTextActive]}>
@@ -136,15 +130,7 @@ export default function NotebookScreen() {
             size={16}
             color={activeTab === 'eventos' ? Colors.premium : Colors.textSubtle}
           />
-          <Text
-            style={[
-              styles.tabText,
-              activeTab === 'eventos' && styles.tabTextActive,
-              activeTab === 'eventos' && { color: Colors.premium },
-            ]}
-          >
-            Eventos
-          </Text>
+          <Text style={[styles.tabText, activeTab === 'eventos' && styles.tabTextActive, activeTab === 'eventos' && { color: Colors.premium }]}>{s.notebookTabEvents}</Text>
           {eventRecipes.length > 0 && (
             <View
               style={[
@@ -169,9 +155,7 @@ export default function NotebookScreen() {
       {atLimit && (
         <View style={styles.limitBanner}>
           <MaterialIcons name="info-outline" size={16} color={Colors.primaryDark} />
-          <Text style={styles.limitText}>
-            Caderno cheio! Upgrade para Premium para salvar receitas ilimitadas.
-          </Text>
+          <Text style={styles.limitText}>{s.notebookLimitBanner}</Text>
         </View>
       )}
 
@@ -183,14 +167,8 @@ export default function NotebookScreen() {
             contentFit="contain"
             transition={300}
           />
-          <Text style={styles.emptyTitle}>
-            {activeTab === 'receitas' ? 'Caderno vazio' : 'Sem eventos salvos'}
-          </Text>
-          <Text style={styles.emptySubtitle}>
-            {activeTab === 'receitas'
-              ? 'Salve suas receitas favoritas e acesse-as offline a qualquer momento.'
-              : 'Crie menus especiais na aba Inspiração e salve aqui para consultar depois.'}
-          </Text>
+          <Text style={styles.emptyTitle}>{activeTab === 'receitas' ? s.notebookEmptyTitle : s.notebookEmptyEventsTitle}</Text>
+          <Text style={styles.emptySubtitle}>{activeTab === 'receitas' ? s.notebookEmptySubtitle : s.notebookEmptyEventsSubtitle}</Text>
           <TouchableOpacity
             style={styles.discoverButton}
             onPress={() => router.push('/')}
@@ -201,9 +179,7 @@ export default function NotebookScreen() {
               size={18}
               color={Colors.textInverse}
             />
-            <Text style={styles.discoverButtonText}>
-              {activeTab === 'receitas' ? 'Descobrir Receitas' : 'Criar Menu Especial'}
-            </Text>
+            <Text style={styles.discoverButtonText}>{activeTab === 'receitas' ? s.notebookDiscoverBtn : s.notebookCreateMenuBtn}</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -305,29 +281,14 @@ export default function NotebookScreen() {
         <Modal visible={alertState.visible} transparent animationType="fade">
           <View style={styles.modalBackdrop}>
             <View style={styles.modalBox}>
-              <Text style={styles.modalTitle}>Remover receita</Text>
-              <Text style={styles.modalMessage}>
-                Deseja remover "{alertState.name}" do seu caderno?
-              </Text>
+              <Text style={styles.modalTitle}>{s.deleteRecipe}</Text>
+              <Text style={styles.modalMessage}>{s.deleteRecipeConfirm.replace('{name}', alertState.name)}</Text>
               <View style={styles.modalButtons}>
-                <TouchableOpacity
-                  style={styles.modalCancelButton}
-                  onPress={() => setAlertState(s => ({ ...s, visible: false }))}
-                >
-                  <Text style={styles.modalCancelText}>Cancelar</Text>
+                <TouchableOpacity style={styles.modalCancelButton} onPress={() => setAlertState(s2 => ({ ...s2, visible: false }))}>
+                  <Text style={styles.modalCancelText}>{s.cancel}</Text>
                 </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.modalConfirmButton}
-                  onPress={() => {
-                    if (alertState.isEvent) {
-                      removeEventRecipe(alertState.id);
-                    } else {
-                      removeRecipe(alertState.id);
-                    }
-                    setAlertState(s => ({ ...s, visible: false }));
-                  }}
-                >
-                  <Text style={styles.modalConfirmText}>Remover</Text>
+                <TouchableOpacity style={styles.modalConfirmButton} onPress={() => { if (alertState.isEvent) { removeEventRecipe(alertState.id); } else { removeRecipe(alertState.id); } setAlertState(s2 => ({ ...s2, visible: false })); }}>
+                  <Text style={styles.modalConfirmText}>{s.remove}</Text>
                 </TouchableOpacity>
               </View>
             </View>

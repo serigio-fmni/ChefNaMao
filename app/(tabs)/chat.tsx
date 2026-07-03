@@ -25,10 +25,12 @@ import {
   createWelcomeMessage,
 } from '../../services/chatService';
 import { PremiumBanner, VoiceActivator } from '../../components';
+import { useStrings } from '../../constants/i18n';
 
 export default function ChatScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const s = useStrings();
   const { profile, consumeVoiceEnergy, session, updateProfile } = useApp();
   const [messages, setMessages] = useState<ChatMessage[]>([createWelcomeMessage()]);
   const [conversationHistory, setConversationHistory] = useState<
@@ -148,11 +150,7 @@ export default function ChatScreen() {
   const handleVoiceEnergyConsumed = async () => {
     if (!session?.access_token) return;
     if (profile.voiceEnergy <= 0) {
-      Alert.alert(
-        'Energia Esgotada',
-        'Sua energia de voz do OkCheff foi esgotada. Aguarde a recarga diária ou faça upgrade do plano.',
-        [{ text: 'OK' }]
-      );
+      Alert.alert('Energia Esgotada', s.voiceEnergyMsg ?? 'Sua energia de voz foi esgotada. Aguarde a recarga diária ou faça upgrade.', [{ text: 'OK' }]);
       return;
     }
     await consumeVoiceEnergy();
@@ -170,10 +168,10 @@ export default function ChatScreen() {
   };
 
   const QUICK_QUESTIONS = [
-    'Dica rápida de culinária',
-    'Substituir ovos em receitas',
-    'Receitas com frango',
-    'Temperos essenciais',
+    s.quickQuestion1,
+    s.quickQuestion2,
+    s.quickQuestion3,
+    s.quickQuestion4,
   ];
 
   const isAuthenticated = !!session;
@@ -375,7 +373,7 @@ export default function ChatScreen() {
       <View style={[styles.inputBar, { paddingBottom: Math.max(insets.bottom, 12) }]}>
         <TextInput
           style={styles.input}
-          placeholder="Pergunte ao OkCheff..."
+          placeholder={s.quickQuestion1.includes('Dica') ? 'Pergunte ao OkCheff...' : 'Ask OkCheff...'}
           placeholderTextColor={Colors.textSubtle}
           value={inputText}
           onChangeText={setInputText}

@@ -195,6 +195,24 @@ export interface Strings {
   quickQuestion3: string;
   quickQuestion4: string;
 
+  // Notebook screen
+  notebookTitle: string;
+  notebookTabIdeas: string;
+  notebookTabRecipes: string;
+  notebookTabEvents: string;
+  notebookRecipeSaved: string;
+  notebookRecipesSaved: string;
+  notebookEventSaved: string;
+  notebookEventsSaved: string;
+  notebookLimit: string;
+  notebookLimitBanner: string;
+  notebookEmptyTitle: string;
+  notebookEmptySubtitle: string;
+  notebookEmptyEventsTitle: string;
+  notebookEmptyEventsSubtitle: string;
+  notebookDiscoverBtn: string;
+  notebookCreateMenuBtn: string;
+
   // Profile — strings extras
   signOutTitle: string;
   signOutMessage: string;
@@ -395,6 +413,23 @@ const pt: Strings = {
   quickQuestion3: 'Receitas com frango',
   quickQuestion4: 'Temperos essenciais',
 
+  notebookTitle: 'Meu Caderno',
+  notebookTabIdeas: 'Ideias',
+  notebookTabRecipes: 'Receitas',
+  notebookTabEvents: 'Eventos',
+  notebookRecipeSaved: 'receita salva',
+  notebookRecipesSaved: 'receitas salvas',
+  notebookEventSaved: 'evento salvo',
+  notebookEventsSaved: 'eventos salvos',
+  notebookLimit: 'Limite: 5',
+  notebookLimitBanner: 'Caderno cheio! Upgrade para Premium para salvar receitas ilimitadas.',
+  notebookEmptyTitle: 'Caderno vazio',
+  notebookEmptySubtitle: 'Salve suas receitas favoritas e acesse-as offline a qualquer momento.',
+  notebookEmptyEventsTitle: 'Sem eventos salvos',
+  notebookEmptyEventsSubtitle: 'Crie menus especiais na aba Inspiração e salve aqui para consultar depois.',
+  notebookDiscoverBtn: 'Descobrir Receitas',
+  notebookCreateMenuBtn: 'Criar Menu Especial',
+
   signOutTitle: 'Sair da conta',
   signOutMessage: 'Deseja realmente sair do OkCheff?',
   signOutConfirm: 'Sair',
@@ -593,6 +628,23 @@ const en: Strings = {
   quickQuestion2: 'Substitute eggs in recipes',
   quickQuestion3: 'Recipes with chicken',
   quickQuestion4: 'Essential spices',
+
+  notebookTitle: 'My Notebook',
+  notebookTabIdeas: 'Ideas',
+  notebookTabRecipes: 'Recipes',
+  notebookTabEvents: 'Events',
+  notebookRecipeSaved: 'recipe saved',
+  notebookRecipesSaved: 'recipes saved',
+  notebookEventSaved: 'event saved',
+  notebookEventsSaved: 'events saved',
+  notebookLimit: 'Limit: 5',
+  notebookLimitBanner: 'Notebook full! Upgrade to Premium to save unlimited recipes.',
+  notebookEmptyTitle: 'Empty notebook',
+  notebookEmptySubtitle: 'Save your favorite recipes and access them offline at any time.',
+  notebookEmptyEventsTitle: 'No events saved',
+  notebookEmptyEventsSubtitle: 'Create special menus in the Inspiration tab and save them here to check later.',
+  notebookDiscoverBtn: 'Discover Recipes',
+  notebookCreateMenuBtn: 'Create Special Menu',
 
   signOutTitle: 'Sign out',
   signOutMessage: 'Do you really want to sign out of OkCheff?',
@@ -793,6 +845,23 @@ const es: Strings = {
   quickQuestion3: 'Recetas con pollo',
   quickQuestion4: 'Especias esenciales',
 
+  notebookTitle: 'Mi Cuaderno',
+  notebookTabIdeas: 'Ideas',
+  notebookTabRecipes: 'Recetas',
+  notebookTabEvents: 'Eventos',
+  notebookRecipeSaved: 'receta guardada',
+  notebookRecipesSaved: 'recetas guardadas',
+  notebookEventSaved: 'evento guardado',
+  notebookEventsSaved: 'eventos guardados',
+  notebookLimit: 'Límite: 5',
+  notebookLimitBanner: '¡Cuaderno lleno! Actualiza a Premium para guardar recetas ilimitadas.',
+  notebookEmptyTitle: 'Cuaderno vacío',
+  notebookEmptySubtitle: 'Guarda tus recetas favoritas y accédelas sin conexión en cualquier momento.',
+  notebookEmptyEventsTitle: 'Sin eventos guardados',
+  notebookEmptyEventsSubtitle: 'Crea menús especiales en la pestaña Inspiración y guárdalos aquí.',
+  notebookDiscoverBtn: 'Descubrir Recetas',
+  notebookCreateMenuBtn: 'Crear Menú Especial',
+
   signOutTitle: 'Cerrar sesión',
   signOutMessage: '¿Realmente deseas cerrar sesión en OkCheff?',
   signOutConfirm: 'Salir',
@@ -991,6 +1060,23 @@ const fr: Strings = {
   quickQuestion2: 'Remplacer les œufs en cuisine',
   quickQuestion3: 'Recettes au poulet',
   quickQuestion4: 'Épices essentielles',
+
+  notebookTitle: 'Mon Carnet',
+  notebookTabIdeas: 'Idées',
+  notebookTabRecipes: 'Recettes',
+  notebookTabEvents: 'Événements',
+  notebookRecipeSaved: 'recette sauvegardée',
+  notebookRecipesSaved: 'recettes sauvegardées',
+  notebookEventSaved: 'événement sauvegardé',
+  notebookEventsSaved: 'événements sauvegardés',
+  notebookLimit: 'Limite : 5',
+  notebookLimitBanner: 'Carnet plein ! Passez à Premium pour sauvegarder des recettes à l’infini.',
+  notebookEmptyTitle: 'Carnet vide',
+  notebookEmptySubtitle: 'Sauvegardez vos recettes favorites et accédez-y hors ligne à tout moment.',
+  notebookEmptyEventsTitle: 'Aucun événement sauvegardé',
+  notebookEmptyEventsSubtitle: 'Créez des menus spéciaux dans l’onglet Inspiration et sauvegardez-les ici.',
+  notebookDiscoverBtn: 'Découvrir des Recettes',
+  notebookCreateMenuBtn: 'Créer un Menu Spécial',
 
   signOutTitle: 'Se déconnecter',
   signOutMessage: 'Voulez-vous vraiment vous déconnecter de OkCheff?',
