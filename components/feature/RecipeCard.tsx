@@ -87,11 +87,7 @@ export function RecipeCard({ recipe: initialRecipe, onPress, compact = false }: 
           contentFit="cover"
           transition={200}
         />
-        {isLocked && (
-          <View style={styles.lockOverlay}>
-            <MaterialIcons name="lock" size={20} color={Colors.textInverse} />
-          </View>
-        )}
+
         <View style={styles.compactContent}>
           <Text style={styles.compactName} numberOfLines={2}>{recipe.name}</Text>
           <View style={styles.compactMeta}>
