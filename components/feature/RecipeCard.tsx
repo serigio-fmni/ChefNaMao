@@ -70,13 +70,19 @@ export function RecipeCard({ recipe: initialRecipe, onPress, compact = false }: 
   const diet = Array.isArray(recipe.diet) ? recipe.diet[0] : recipe.diet;
   const imageUri = recipe.image && recipe.image.startsWith('http') ? recipe.image : FALLBACK_IMAGE;
 
-  // Mostra até 4 ingredientes sem quantidade
+  // Mostra todos os ingredientes sem quantidade
   const ingredientNames = (recipe.ingredients || [])
-    .slice(0, 4)
     .map((ing: string) => {
-      const parts = ing.split(' ');
-      return parts.length > 2 ? parts.slice(2).join(' ') : ing;
-    });
+      // Remove medidas do início: "2 xícaras de farinha" → "farinha"
+      // Remove padrões como "1", "1/2", "de ", "xícara de ", etc.
+      return ing
+        .replace(/^[\d½¼¾⅓⅔\s\/,\.]+/, '') // remove números do início
+        .replace(/^(de |do |da |dos |das |um |uma |uns |umas )/i, '') // remove artigos
+        .replace(/^(colher|xícara|copo|pitada|fatia|dente|folha|ramo|fio|punhado|tablete|lata|pacote|sachê|unidade|pedaço|kg|g|ml|l|mg)s?\s+(de\s+)?/i, '') // remove medidas
+        .replace(/^(de |do |da |dos |das )/i, '') // remove artigos restantes
+        .trim();
+    })
+    .filter(Boolean);
 
   if (compact) {
     return (
@@ -149,7 +155,6 @@ export function RecipeCard({ recipe: initialRecipe, onPress, compact = false }: 
           <View style={styles.ingredientsSection}>
             <Text style={styles.ingredientsList}>
               {ingredientNames.join('  ·  ')}
-              {recipe.ingredients.length > 4 ? `  +${recipe.ingredients.length - 4}` : ''}
             </Text>
           </View>
         )}
