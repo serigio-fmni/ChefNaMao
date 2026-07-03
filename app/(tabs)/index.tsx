@@ -25,40 +25,24 @@ import {
   EventOccasion,
   EVENT_OCCASIONS,
 } from '../../constants/data';
-
-const DIET_OPTIONS: Array<{ value: DietType | 'todas'; label: string }> = [
-  { value: 'todas', label: 'Todas' },
-  { value: 'tradicional', label: 'Tradicional' },
-  { value: 'vegetariana', label: 'Vegetariana' },
-  { value: 'vegana', label: 'Vegana' },
-];
-
-const MEAL_OPTIONS: Array<{ value: MealType | 'todas'; label: string }> = [
-  { value: 'todas', label: 'Todas' },
-  { value: 'rapida', label: 'Rápida' },
-  { value: 'classica', label: 'Clássica' },
-  { value: 'internacional', label: 'Internacional' },
-  { value: 'regional', label: 'Regional' },
-  { value: 'sobremesa', label: 'Sobremesa' },
-];
+import { useStrings } from '../../constants/i18n';
 
 type HomeTab = 'geladeira' | 'inspiracao';
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const s = useStrings();
   const { profile, selectedDiet, setSelectedDiet, selectedMealType, setSelectedMealType } = useApp();
 
   const [activeTab, setActiveTab] = useState<HomeTab>('geladeira');
 
   const handleOpenSearch = () => router.push('/search');
 
-  // Na Geladeira state
   const [ingredientInput, setIngredientInput] = useState('');
   const [ingredients, setIngredients] = useState<string[]>([]);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
 
-  // Inspiração state
   const [selectedOccasion, setSelectedOccasion] = useState<EventOccasion | null>(null);
   const [inspirationRecipes, setInspirationRecipes] = useState<Recipe[]>([]);
 
@@ -67,7 +51,22 @@ export default function HomeScreen() {
 
   const maxIngredients = profile.isPremium ? 99 : 3;
 
-  // ── Geladeira actions ──────────────────────────────────────────────────────
+  const DIET_OPTIONS: Array<{ value: DietType | 'todas'; label: string }> = [
+    { value: 'todas', label: s.filterAll },
+    { value: 'tradicional', label: s.filterTraditional },
+    { value: 'vegetariana', label: s.filterVegetarian },
+    { value: 'vegana', label: s.filterVegan },
+  ];
+
+  const MEAL_OPTIONS: Array<{ value: MealType | 'todas'; label: string }> = [
+    { value: 'todas', label: s.filterAll },
+    { value: 'rapida', label: s.filterQuick },
+    { value: 'classica', label: s.filterClassic },
+    { value: 'internacional', label: s.filterInternational },
+    { value: 'regional', label: s.filterRegional },
+    { value: 'sobremesa', label: s.filterDessert },
+  ];
+
   const addIngredient = () => {
     const trimmed = ingredientInput.trim();
     if (!trimmed) return;
@@ -99,7 +98,6 @@ export default function HomeScreen() {
     }
   }, [ingredients, selectedDiet, selectedMealType, profile.isPremium]);
 
-  // ── Inspiração actions ────────────────────────────────────────────────────
   const handleInspirationSearch = useCallback(async () => {
     if (!selectedOccasion) return;
     setIsLoading(true);
@@ -156,9 +154,7 @@ export default function HomeScreen() {
               <View style={styles.brandBadge}><Text style={styles.brandBadgeText}>OkCheff</Text></View>
             </View>
             <Text style={styles.heroTitle}>
-              {activeTab === 'geladeira'
-                ? 'O que vamos\ncozinhar hoje?'
-                : 'Qual a ocasião\nespecial?'}
+              {activeTab === 'geladeira' ? s.heroTitleFridge : s.heroTitleInspiration}
             </Text>
           </View>
         </View>
@@ -176,13 +172,8 @@ export default function HomeScreen() {
                 size={16}
                 color={activeTab === 'geladeira' ? Colors.textInverse : Colors.textSubtle}
               />
-              <Text
-                style={[
-                  styles.segmentText,
-                  activeTab === 'geladeira' && styles.segmentTextActive,
-                ]}
-              >
-                Na Geladeira
+              <Text style={[styles.segmentText, activeTab === 'geladeira' && styles.segmentTextActive]}>
+                {s.tabFridge}
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -195,13 +186,8 @@ export default function HomeScreen() {
                 size={16}
                 color={activeTab === 'inspiracao' ? Colors.textInverse : Colors.textSubtle}
               />
-              <Text
-                style={[
-                  styles.segmentText,
-                  activeTab === 'inspiracao' && styles.segmentTextActive,
-                ]}
-              >
-                Inspiração
+              <Text style={[styles.segmentText, activeTab === 'inspiracao' && styles.segmentTextActive]}>
+                {s.tabInspiration}
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -210,7 +196,7 @@ export default function HomeScreen() {
               activeOpacity={0.8}
             >
               <MaterialIcons name="search" size={16} color={Colors.textSubtle} />
-              <Text style={styles.segmentText}>Prato Específico</Text>
+              <Text style={styles.segmentText}>{s.tabSpecificDish}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -218,19 +204,18 @@ export default function HomeScreen() {
         {/* ── NA GELADEIRA TAB ─────────────────────────────────────────── */}
         {activeTab === 'geladeira' && (
           <>
-            {/* Search Box */}
             <View style={styles.searchCard}>
-              <Text style={styles.sectionTitle}>Ingredientes disponíveis</Text>
+              <Text style={styles.sectionTitle}>{s.ingredientsTitle}</Text>
               <Text style={styles.sectionSubtitle}>
                 {profile.isPremium
-                  ? 'Adicione quantos ingredientes quiser'
-                  : `Até ${maxIngredients} ingredientes no plano gratuito`}
+                  ? s.ingredientsSubtitlePremium
+                  : s.ingredientsSubtitleFree.replace('{max}', String(maxIngredients))}
               </Text>
 
               <View style={styles.inputRow}>
                 <TextInput
                   style={styles.input}
-                  placeholder="Ex: frango, tomate, alho..."
+                  placeholder={s.ingredientPlaceholder}
                   placeholderTextColor={Colors.textSubtle}
                   value={ingredientInput}
                   onChangeText={setIngredientInput}
@@ -253,20 +238,14 @@ export default function HomeScreen() {
               {!profile.isPremium && ingredients.length >= 3 && (
                 <View style={styles.limitWarning}>
                   <MaterialIcons name="info" size={14} color={Colors.primary} />
-                  <Text style={styles.limitWarningText}>
-                    Limite do plano gratuito atingido. Faça upgrade para adicionar mais!
-                  </Text>
+                  <Text style={styles.limitWarningText}>{s.ingredientLimitWarning}</Text>
                 </View>
               )}
 
               {ingredients.length > 0 && (
                 <View style={styles.chips}>
                   {ingredients.map(ing => (
-                    <IngredientChip
-                      key={ing}
-                      label={ing}
-                      onRemove={() => removeIngredient(ing)}
-                    />
+                    <IngredientChip key={ing} label={ing} onRemove={() => removeIngredient(ing)} />
                   ))}
                 </View>
               )}
@@ -274,24 +253,16 @@ export default function HomeScreen() {
 
             {/* Filters */}
             <View style={styles.filtersSection}>
-              <Text style={styles.filterLabel}>Dieta</Text>
+              <Text style={styles.filterLabel}>{s.filterDiet}</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll}>
                 <View style={styles.filterRow}>
                   {DIET_OPTIONS.map(opt => (
                     <TouchableOpacity
                       key={opt.value}
-                      style={[
-                        styles.filterChip,
-                        selectedDiet === opt.value && styles.filterChipActive,
-                      ]}
+                      style={[styles.filterChip, selectedDiet === opt.value && styles.filterChipActive]}
                       onPress={() => setSelectedDiet(opt.value)}
                     >
-                      <Text
-                        style={[
-                          styles.filterChipText,
-                          selectedDiet === opt.value && styles.filterChipTextActive,
-                        ]}
-                      >
+                      <Text style={[styles.filterChipText, selectedDiet === opt.value && styles.filterChipTextActive]}>
                         {opt.label}
                       </Text>
                     </TouchableOpacity>
@@ -299,24 +270,16 @@ export default function HomeScreen() {
                 </View>
               </ScrollView>
 
-              <Text style={[styles.filterLabel, { marginTop: Spacing.md }]}>Tipo de receita</Text>
+              <Text style={[styles.filterLabel, { marginTop: Spacing.md }]}>{s.filterType}</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll}>
                 <View style={styles.filterRow}>
                   {MEAL_OPTIONS.map(opt => (
                     <TouchableOpacity
                       key={opt.value}
-                      style={[
-                        styles.filterChip,
-                        selectedMealType === opt.value && styles.filterChipActive,
-                      ]}
+                      style={[styles.filterChip, selectedMealType === opt.value && styles.filterChipActive]}
                       onPress={() => setSelectedMealType(opt.value)}
                     >
-                      <Text
-                        style={[
-                          styles.filterChipText,
-                          selectedMealType === opt.value && styles.filterChipTextActive,
-                        ]}
-                      >
+                      <Text style={[styles.filterChipText, selectedMealType === opt.value && styles.filterChipTextActive]}>
                         {opt.label}
                       </Text>
                     </TouchableOpacity>
@@ -335,23 +298,22 @@ export default function HomeScreen() {
               {isLoading ? (
                 <>
                   <ActivityIndicator size="small" color={Colors.textInverse} />
-                  <Text style={styles.generateButtonText}>Gerando receitas...</Text>
+                  <Text style={styles.generateButtonText}>{s.btnGenerating}</Text>
                 </>
               ) : (
                 <>
                   <MaterialIcons name="auto-awesome" size={20} color={Colors.textInverse} />
                   <Text style={styles.generateButtonText}>
-                    {ingredients.length > 0 ? 'Gerar Receitas' : 'Ver Todas as Receitas'}
+                    {ingredients.length > 0 ? s.btnGenerate : s.btnGenerateAll}
                   </Text>
                 </>
               )}
             </TouchableOpacity>
 
-            {/* Results */}
             {isLoading && (
               <View style={styles.loadingContainer}>
                 <ActivityIndicator size="large" color={Colors.primary} />
-                <Text style={styles.loadingText}>OkCheff está criando suas receitas... 🧑‍🍳</Text>
+                <Text style={styles.loadingText}>{s.loadingRecipes}</Text>
               </View>
             )}
 
@@ -360,19 +322,17 @@ export default function HomeScreen() {
                 <View style={styles.resultsHeader}>
                   <Text style={styles.resultsTitle}>
                     {recipes.length > 0
-                      ? `${recipes.length} receitas encontradas`
-                      : 'Nenhuma receita encontrada'}
+                      ? s.resultsFound.replace('{n}', String(recipes.length))
+                      : s.resultsNone}
                   </Text>
                   {ingredients.length > 0 && (
-                    <Text style={styles.resultsMeta}>Com: {ingredients.join(', ')}</Text>
+                    <Text style={styles.resultsMeta}>
+                      {s.resultsWith.replace('{list}', ingredients.join(', '))}
+                    </Text>
                   )}
                 </View>
                 {recipes.map(recipe => (
-                  <RecipeCard
-                    key={recipe.id}
-                    recipe={recipe}
-                    onPress={() => router.push(`/recipe/${recipe.id}`)}
-                  />
+                  <RecipeCard key={recipe.id} recipe={recipe} onPress={() => router.push(`/recipe/${recipe.id}`)} />
                 ))}
               </View>
             )}
@@ -382,12 +342,9 @@ export default function HomeScreen() {
         {/* ── INSPIRAÇÃO TAB ───────────────────────────────────────────── */}
         {activeTab === 'inspiracao' && (
           <>
-            {/* Occasion selector */}
             <View style={styles.searchCard}>
-              <Text style={styles.sectionTitle}>Vibe / Ocasião Especial</Text>
-              <Text style={styles.sectionSubtitle}>
-                Selecione a data e o OkCheff cria o menu perfeito para você
-              </Text>
+              <Text style={styles.sectionTitle}>{s.occasionTitle}</Text>
+              <Text style={styles.sectionSubtitle}>{s.occasionSubtitle}</Text>
               <View style={styles.occasionGrid}>
                 {EVENT_OCCASIONS.map(occ => {
                   const isSelected = selectedOccasion === occ.value;
@@ -399,13 +356,7 @@ export default function HomeScreen() {
                       activeOpacity={0.8}
                     >
                       <Text style={styles.occasionEmoji}>{occ.emoji}</Text>
-                      <Text
-                        style={[
-                          styles.occasionLabel,
-                          isSelected && styles.occasionLabelActive,
-                        ]}
-                        numberOfLines={2}
-                      >
+                      <Text style={[styles.occasionLabel, isSelected && styles.occasionLabelActive]} numberOfLines={2}>
                         {occ.label}
                       </Text>
                       {isSelected && (
@@ -418,25 +369,16 @@ export default function HomeScreen() {
                 })}
               </View>
 
-              {/* Diet filter for Inspiração */}
-              <Text style={[styles.filterLabel, { marginTop: Spacing.md }]}>Restrição alimentar</Text>
+              <Text style={[styles.filterLabel, { marginTop: Spacing.md }]}>{s.occasionDietFilter}</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll}>
                 <View style={styles.filterRow}>
                   {DIET_OPTIONS.map(opt => (
                     <TouchableOpacity
                       key={opt.value}
-                      style={[
-                        styles.filterChip,
-                        selectedDiet === opt.value && styles.filterChipActive,
-                      ]}
+                      style={[styles.filterChip, selectedDiet === opt.value && styles.filterChipActive]}
                       onPress={() => setSelectedDiet(opt.value)}
                     >
-                      <Text
-                        style={[
-                          styles.filterChipText,
-                          selectedDiet === opt.value && styles.filterChipTextActive,
-                        ]}
-                      >
+                      <Text style={[styles.filterChipText, selectedDiet === opt.value && styles.filterChipTextActive]}>
                         {opt.label}
                       </Text>
                     </TouchableOpacity>
@@ -445,7 +387,6 @@ export default function HomeScreen() {
               </ScrollView>
             </View>
 
-            {/* Sugerir Menu CTA */}
             <TouchableOpacity
               style={[
                 styles.generateButton,
@@ -459,45 +400,37 @@ export default function HomeScreen() {
               {isLoading ? (
                 <>
                   <ActivityIndicator size="small" color={Colors.text} />
-                  <Text style={[styles.generateButtonText, { color: Colors.text }]}>
-                    OkCheff preparando menu exclusivo...
-                  </Text>
+                  <Text style={[styles.generateButtonText, { color: Colors.text }]}>{s.btnPreparingMenu}</Text>
                 </>
               ) : (
                 <>
                   <MaterialIcons name="celebration" size={20} color={Colors.text} />
                   <Text style={[styles.generateButtonText, { color: Colors.text }]}>
-                    {selectedOccasion ? 'Sugerir Menu Exclusivo' : 'Selecione uma ocasião'}
+                    {selectedOccasion ? s.btnSuggestMenu : s.btnSelectOccasion}
                   </Text>
                 </>
               )}
             </TouchableOpacity>
 
-            {/* Loading */}
             {isLoading && (
               <View style={styles.loadingContainer}>
                 <ActivityIndicator size="large" color={Colors.primary} />
-                <Text style={styles.loadingText}>
-                  OkCheff criando o menu perfeito para sua ocasião... ✨
-                </Text>
+                <Text style={styles.loadingText}>{s.btnPreparingMenu}</Text>
               </View>
             )}
 
-            {/* Inspiration Results */}
             {!isLoading && hasSearched && (
               <View style={styles.resultsSection}>
                 <View style={styles.inspirationResultsHeader}>
                   <MaterialIcons name="restaurant-menu" size={20} color={Colors.premium} />
                   <Text style={styles.resultsTitle}>
                     {inspirationRecipes.length > 0
-                      ? `Menu Gourmet — ${inspirationRecipes.length} pratos`
-                      : 'Nenhuma sugestão disponível'}
+                      ? s.menuTitle.replace('{n}', String(inspirationRecipes.length))
+                      : s.menuNone}
                   </Text>
                 </View>
                 {inspirationRecipes.length > 0 && (
-                  <Text style={styles.inspirationNote}>
-                    🛒 Lista de compras inclusa · Receitas elaboradas para impressionar
-                  </Text>
+                  <Text style={styles.inspirationNote}>{s.menuNote}</Text>
                 )}
                 {inspirationRecipes.map(recipe => (
                   <EventRecipeCard
@@ -516,352 +449,63 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background,
-  },
-  scroll: {
-    flex: 1,
-  },
-  scrollContent: {
-    gap: 0,
-  },
-  heroContainer: {
-    height: 200,
-    position: 'relative',
-    overflow: 'hidden',
-  },
-  heroBg: {
-    position: 'absolute',
-    width: '100%',
-    height: '100%',
-  },
-  heroOverlay: {
-    position: 'absolute',
-    top: 0, left: 0, right: 0, bottom: 0,
-    backgroundColor: 'rgba(44, 24, 16, 0.55)',
-  },
-  heroSearchBtn: {
-    position: 'absolute',
-    top: 12,
-    right: Spacing.base,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    borderRadius: Radius.full,
-    paddingVertical: 7,
-    paddingHorizontal: 14,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.3)',
-  },
-  heroSearchText: {
-    fontSize: Typography.sizes.sm,
-    fontWeight: Typography.weights.semibold,
-    color: Colors.textInverse,
-  },
-  heroContent: {
-    position: 'absolute',
-    bottom: 24,
-    left: Spacing.base,
-    right: Spacing.base,
-  },
-  brandRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-    marginBottom: 4,
-  },
-  brandBadge: {
-    backgroundColor: Colors.primary,
-    borderRadius: Radius.full,
-    paddingVertical: 2,
-    paddingHorizontal: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.35)',
-  },
-  brandBadgeText: {
-    fontSize: Typography.sizes.xs,
-    fontWeight: Typography.weights.extrabold,
-    color: Colors.textInverse,
-    letterSpacing: 0.5,
-  },
-  premiumIndicator: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.premium,
-    borderRadius: Radius.full,
-    paddingVertical: 4,
-    paddingHorizontal: 10,
-    gap: 4,
-    alignSelf: 'flex-start',
-    marginBottom: Spacing.sm,
-  },
-  premiumIndicatorText: {
-    fontSize: Typography.sizes.xs,
-    fontWeight: Typography.weights.bold,
-    color: Colors.text,
-  },
-  greeting: {
-    fontSize: Typography.sizes.sm,
-    color: 'rgba(255,248,240,0.85)',
-    fontWeight: Typography.weights.medium,
-    marginBottom: 4,
-  },
-  heroTitle: {
-    fontSize: Typography.sizes.h2,
-    fontWeight: Typography.weights.extrabold,
-    color: Colors.textInverse,
-    lineHeight: 32,
-  },
-  // ── Segmented Control ──────────────────────────────────────────────────────
-  segmentedWrapper: {
-    paddingHorizontal: Spacing.base,
-    paddingTop: Spacing.base,
-    paddingBottom: Spacing.xs,
-  },
-  segmented: {
-    flexDirection: 'row',
-    backgroundColor: Colors.surfaceDark,
-    borderRadius: Radius.lg,
-    padding: 4,
-  },
-  segmentButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: Spacing.sm,
-    paddingVertical: Spacing.md,
-    borderRadius: Radius.md,
-  },
-  segmentButtonActive: {
-    backgroundColor: Colors.primary,
-    ...Shadows.sm,
-  },
-  segmentText: {
-    fontSize: Typography.sizes.sm,
-    fontWeight: Typography.weights.semibold,
-    color: Colors.textSubtle,
-  },
-  segmentTextActive: {
-    color: Colors.textInverse,
-    fontWeight: Typography.weights.bold,
-  },
-  // ── Shared ─────────────────────────────────────────────────────────────────
-  searchCard: {
-    backgroundColor: Colors.surface,
-    margin: Spacing.base,
-    marginBottom: 0,
-    borderRadius: Radius.lg,
-    padding: Spacing.base,
-    ...Shadows.md,
-  },
-  sectionTitle: {
-    fontSize: Typography.sizes.lg,
-    fontWeight: Typography.weights.bold,
-    color: Colors.text,
-    marginBottom: 4,
-  },
-  sectionSubtitle: {
-    fontSize: Typography.sizes.sm,
-    color: Colors.textSubtle,
-    marginBottom: Spacing.md,
-  },
-  // ── Occasion Selector ──────────────────────────────────────────────────────
-  occasionGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: Spacing.sm,
-    marginBottom: Spacing.sm,
-  },
-  occasionCard: {
-    width: '47%',
-    backgroundColor: Colors.surfaceElevated,
-    borderRadius: Radius.md,
-    padding: Spacing.md,
-    alignItems: 'flex-start',
-    borderWidth: 1.5,
-    borderColor: Colors.borderLight,
-    gap: 4,
-    position: 'relative',
-    ...Shadows.sm,
-  },
-  occasionCardActive: {
-    borderColor: Colors.primary,
-    backgroundColor: Colors.primary + '08',
-  },
-  occasionEmoji: {
-    fontSize: 28,
-    marginBottom: 2,
-  },
-  occasionLabel: {
-    fontSize: Typography.sizes.sm,
-    fontWeight: Typography.weights.semibold,
-    color: Colors.text,
-    lineHeight: 18,
-  },
-  occasionLabelActive: {
-    color: Colors.primary,
-  },
-  occasionCheck: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-  },
-  // ── Geladeira Styles ───────────────────────────────────────────────────────
-  inputRow: {
-    flexDirection: 'row',
-    gap: Spacing.sm,
-    alignItems: 'center',
-  },
-  input: {
-    flex: 1,
-    height: 48,
-    backgroundColor: Colors.background,
-    borderRadius: Radius.md,
-    paddingHorizontal: Spacing.base,
-    fontSize: Typography.sizes.base,
-    color: Colors.text,
-    borderWidth: 1.5,
-    borderColor: Colors.border,
-  },
-  addButton: {
-    width: 48,
-    height: 48,
-    borderRadius: Radius.md,
-    backgroundColor: Colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  addButtonDisabled: {
-    backgroundColor: Colors.border,
-  },
-  limitWarning: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.xs,
-    marginTop: Spacing.sm,
-    backgroundColor: Colors.primary + '15',
-    borderRadius: Radius.sm,
-    padding: Spacing.sm,
-  },
-  limitWarningText: {
-    flex: 1,
-    fontSize: Typography.sizes.xs,
-    color: Colors.primaryDark,
-    lineHeight: 16,
-  },
-  chips: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: Spacing.sm,
-    marginTop: Spacing.md,
-  },
-  filtersSection: {
-    paddingHorizontal: Spacing.base,
-    marginTop: Spacing.base,
-    marginBottom: Spacing.sm,
-  },
-  filterLabel: {
-    fontSize: Typography.sizes.sm,
-    fontWeight: Typography.weights.semibold,
-    color: Colors.textSecondary,
-    marginBottom: Spacing.sm,
-  },
-  filterScroll: {
-    flexGrow: 0,
-  },
-  filterRow: {
-    flexDirection: 'row',
-    gap: Spacing.sm,
-    paddingRight: Spacing.base,
-  },
-  filterChip: {
-    height: 36,
-    borderRadius: Radius.full,
-    paddingHorizontal: Spacing.base,
-    backgroundColor: Colors.surface,
-    borderWidth: 1.5,
-    borderColor: Colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  filterChipActive: {
-    backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
-  },
-  filterChipText: {
-    fontSize: Typography.sizes.sm,
-    fontWeight: Typography.weights.medium,
-    color: Colors.textSecondary,
-  },
-  filterChipTextActive: {
-    color: Colors.textInverse,
-    fontWeight: Typography.weights.semibold,
-  },
-  generateButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: Spacing.sm,
-    backgroundColor: Colors.primary,
-    borderRadius: Radius.lg,
-    marginHorizontal: Spacing.base,
-    marginTop: Spacing.base,
-    marginBottom: Spacing.xl,
-    height: 56,
-    ...Shadows.lg,
-  },
-  inspirationButton: {
-    backgroundColor: Colors.premium,
-  },
-  generateButtonLoading: {
-    opacity: 0.65,
-  },
-  generateButtonText: {
-    fontSize: Typography.sizes.base,
-    fontWeight: Typography.weights.bold,
-    color: Colors.textInverse,
-  },
-  loadingContainer: {
-    alignItems: 'center',
-    paddingVertical: Spacing.xxl,
-    gap: Spacing.md,
-    paddingHorizontal: Spacing.base,
-  },
-  loadingText: {
-    fontSize: Typography.sizes.base,
-    color: Colors.textSecondary,
-    textAlign: 'center',
-    fontStyle: 'italic',
-  },
-  resultsSection: {
-    paddingHorizontal: Spacing.base,
-  },
-  resultsHeader: {
-    marginBottom: Spacing.base,
-  },
-  inspirationResultsHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-    marginBottom: Spacing.sm,
-  },
-  resultsTitle: {
-    fontSize: Typography.sizes.lg,
-    fontWeight: Typography.weights.bold,
-    color: Colors.text,
-  },
-  resultsMeta: {
-    fontSize: Typography.sizes.sm,
-    color: Colors.textSubtle,
-    marginTop: 2,
-  },
-  inspirationNote: {
-    fontSize: Typography.sizes.sm,
-    color: Colors.textSubtle,
-    marginBottom: Spacing.base,
-    lineHeight: 20,
-  },
+  container: { flex: 1, backgroundColor: Colors.background },
+  scroll: { flex: 1 },
+  scrollContent: { gap: 0 },
+  heroContainer: { height: 200, position: 'relative', overflow: 'hidden' },
+  heroBg: { position: 'absolute', width: '100%', height: '100%' },
+  heroOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(44, 24, 16, 0.55)' },
+  heroContent: { position: 'absolute', bottom: 24, left: Spacing.base, right: Spacing.base },
+  brandRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginBottom: 4 },
+  brandBadge: { backgroundColor: Colors.primary, borderRadius: Radius.full, paddingVertical: 2, paddingHorizontal: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,0.35)' },
+  brandBadgeText: { fontSize: Typography.sizes.xs, fontWeight: Typography.weights.extrabold, color: Colors.textInverse, letterSpacing: 0.5 },
+  premiumIndicator: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.premium, borderRadius: Radius.full, paddingVertical: 4, paddingHorizontal: 10, gap: 4, alignSelf: 'flex-start', marginBottom: Spacing.sm },
+  premiumIndicatorText: { fontSize: Typography.sizes.xs, fontWeight: Typography.weights.bold, color: Colors.text },
+  greeting: { fontSize: Typography.sizes.sm, color: 'rgba(255,248,240,0.85)', fontWeight: Typography.weights.medium, marginBottom: 4 },
+  heroTitle: { fontSize: Typography.sizes.h2, fontWeight: Typography.weights.extrabold, color: Colors.textInverse, lineHeight: 32 },
+  segmentedWrapper: { paddingHorizontal: Spacing.base, paddingTop: Spacing.base, paddingBottom: Spacing.xs },
+  segmented: { flexDirection: 'row', backgroundColor: Colors.surfaceDark, borderRadius: Radius.lg, padding: 4 },
+  segmentButton: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.sm, paddingVertical: Spacing.md, borderRadius: Radius.md },
+  segmentButtonActive: { backgroundColor: Colors.primary, ...Shadows.sm },
+  segmentText: { fontSize: Typography.sizes.sm, fontWeight: Typography.weights.semibold, color: Colors.textSubtle },
+  segmentTextActive: { color: Colors.textInverse, fontWeight: Typography.weights.bold },
+  searchCard: { backgroundColor: Colors.surface, margin: Spacing.base, marginBottom: 0, borderRadius: Radius.lg, padding: Spacing.base, ...Shadows.md },
+  sectionTitle: { fontSize: Typography.sizes.lg, fontWeight: Typography.weights.bold, color: Colors.text, marginBottom: 4 },
+  sectionSubtitle: { fontSize: Typography.sizes.sm, color: Colors.textSubtle, marginBottom: Spacing.md },
+  occasionGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm, marginBottom: Spacing.sm },
+  occasionCard: { width: '47%', backgroundColor: Colors.surfaceElevated, borderRadius: Radius.md, padding: Spacing.md, alignItems: 'flex-start', borderWidth: 1.5, borderColor: Colors.borderLight, gap: 4, position: 'relative', ...Shadows.sm },
+  occasionCardActive: { borderColor: Colors.primary, backgroundColor: Colors.primary + '08' },
+  occasionEmoji: { fontSize: 28, marginBottom: 2 },
+  occasionLabel: { fontSize: Typography.sizes.sm, fontWeight: Typography.weights.semibold, color: Colors.text, lineHeight: 18 },
+  occasionLabelActive: { color: Colors.primary },
+  occasionCheck: { position: 'absolute', top: 8, right: 8 },
+  inputRow: { flexDirection: 'row', gap: Spacing.sm, alignItems: 'center' },
+  input: { flex: 1, height: 48, backgroundColor: Colors.background, borderRadius: Radius.md, paddingHorizontal: Spacing.base, fontSize: Typography.sizes.base, color: Colors.text, borderWidth: 1.5, borderColor: Colors.border },
+  addButton: { width: 48, height: 48, borderRadius: Radius.md, backgroundColor: Colors.primary, alignItems: 'center', justifyContent: 'center' },
+  addButtonDisabled: { backgroundColor: Colors.border },
+  limitWarning: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, marginTop: Spacing.sm, backgroundColor: Colors.primary + '15', borderRadius: Radius.sm, padding: Spacing.sm },
+  limitWarningText: { flex: 1, fontSize: Typography.sizes.xs, color: Colors.primaryDark, lineHeight: 16 },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm, marginTop: Spacing.md },
+  filtersSection: { paddingHorizontal: Spacing.base, marginTop: Spacing.base, marginBottom: Spacing.sm },
+  filterLabel: { fontSize: Typography.sizes.sm, fontWeight: Typography.weights.semibold, color: Colors.textSecondary, marginBottom: Spacing.sm },
+  filterScroll: { flexGrow: 0 },
+  filterRow: { flexDirection: 'row', gap: Spacing.sm, paddingRight: Spacing.base },
+  filterChip: { height: 36, borderRadius: Radius.full, paddingHorizontal: Spacing.base, backgroundColor: Colors.surface, borderWidth: 1.5, borderColor: Colors.border, alignItems: 'center', justifyContent: 'center' },
+  filterChipActive: { backgroundColor: Colors.primary, borderColor: Colors.primary },
+  filterChipText: { fontSize: Typography.sizes.sm, fontWeight: Typography.weights.medium, color: Colors.textSecondary },
+  filterChipTextActive: { color: Colors.textInverse, fontWeight: Typography.weights.semibold },
+  generateButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.sm, backgroundColor: Colors.primary, borderRadius: Radius.lg, marginHorizontal: Spacing.base, marginTop: Spacing.base, marginBottom: Spacing.xl, height: 56, ...Shadows.lg },
+  inspirationButton: { backgroundColor: Colors.premium },
+  generateButtonLoading: { opacity: 0.65 },
+  generateButtonText: { fontSize: Typography.sizes.base, fontWeight: Typography.weights.bold, color: Colors.textInverse },
+  loadingContainer: { alignItems: 'center', paddingVertical: Spacing.xxl, gap: Spacing.md, paddingHorizontal: Spacing.base },
+  loadingText: { fontSize: Typography.sizes.base, color: Colors.textSecondary, textAlign: 'center', fontStyle: 'italic' },
+  resultsSection: { paddingHorizontal: Spacing.base },
+  resultsHeader: { marginBottom: Spacing.base },
+  inspirationResultsHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginBottom: Spacing.sm },
+  resultsTitle: { fontSize: Typography.sizes.lg, fontWeight: Typography.weights.bold, color: Colors.text },
+  resultsMeta: { fontSize: Typography.sizes.sm, color: Colors.textSubtle, marginTop: 2 },
+  inspirationNote: { fontSize: Typography.sizes.sm, color: Colors.textSubtle, marginBottom: Spacing.base, lineHeight: 20 },
+  heroSearchBtn: { position: 'absolute', top: 12, right: Spacing.base, flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(255,255,255,0.18)', borderRadius: Radius.full, paddingVertical: 7, paddingHorizontal: 14, borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)' },
+  heroSearchText: { fontSize: Typography.sizes.sm, fontWeight: Typography.weights.semibold, color: Colors.textInverse },
 });

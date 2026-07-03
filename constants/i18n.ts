@@ -152,6 +152,49 @@ export interface Strings {
   portions: string;
   minutes: string;
 
+  // Home screen
+  tabFridge: string;
+  tabInspiration: string;
+  tabSpecificDish: string;
+  heroTitleFridge: string;
+  heroTitleInspiration: string;
+  ingredientsTitle: string;
+  ingredientsSubtitlePremium: string;
+  ingredientsSubtitleFree: string;
+  ingredientPlaceholder: string;
+  ingredientLimitWarning: string;
+  filterDiet: string;
+  filterType: string;
+  filterAll: string;
+  filterTraditional: string;
+  filterVegetarian: string;
+  filterVegan: string;
+  filterQuick: string;
+  filterClassic: string;
+  filterInternational: string;
+  filterRegional: string;
+  filterDessert: string;
+  btnGenerate: string;
+  btnGenerateAll: string;
+  btnGenerating: string;
+  resultsFound: string;
+  resultsNone: string;
+  resultsWith: string;
+  loadingRecipes: string;
+  occasionTitle: string;
+  occasionSubtitle: string;
+  occasionDietFilter: string;
+  btnSuggestMenu: string;
+  btnSelectOccasion: string;
+  btnPreparingMenu: string;
+  menuTitle: string;
+  menuNote: string;
+  menuNone: string;
+  quickQuestion1: string;
+  quickQuestion2: string;
+  quickQuestion3: string;
+  quickQuestion4: string;
+
   // Profile — strings extras
   signOutTitle: string;
   signOutMessage: string;
@@ -310,6 +353,48 @@ const pt: Strings = {
   portions: 'porções',
   minutes: 'min',
 
+  tabFridge: 'Na Geladeira',
+  tabInspiration: 'Inspiração',
+  tabSpecificDish: 'Prato Específico',
+  heroTitleFridge: 'O que vamos\ncozinhar hoje?',
+  heroTitleInspiration: 'Qual a ocasião\nespecial?',
+  ingredientsTitle: 'Ingredientes disponíveis',
+  ingredientsSubtitlePremium: 'Adicione quantos ingredientes quiser',
+  ingredientsSubtitleFree: 'Até {max} ingredientes no plano gratuito',
+  ingredientPlaceholder: 'Ex: frango, tomate, alho...',
+  ingredientLimitWarning: 'Limite do plano gratuito atingido. Faça upgrade para adicionar mais!',
+  filterDiet: 'Dieta',
+  filterType: 'Tipo de receita',
+  filterAll: 'Todas',
+  filterTraditional: 'Tradicional',
+  filterVegetarian: 'Vegetariana',
+  filterVegan: 'Vegana',
+  filterQuick: 'Rápida',
+  filterClassic: 'Clássica',
+  filterInternational: 'Internacional',
+  filterRegional: 'Regional',
+  filterDessert: 'Sobremesa',
+  btnGenerate: 'Gerar Receitas',
+  btnGenerateAll: 'Ver Todas as Receitas',
+  btnGenerating: 'Gerando receitas...',
+  resultsFound: '{n} receitas encontradas',
+  resultsNone: 'Nenhuma receita encontrada',
+  resultsWith: 'Com: {list}',
+  loadingRecipes: 'OkCheff está criando suas receitas... 🧑‍🍳',
+  occasionTitle: 'Vibe / Ocasião Especial',
+  occasionSubtitle: 'Selecione a data e o OkCheff cria o menu perfeito para você',
+  occasionDietFilter: 'Restrição alimentar',
+  btnSuggestMenu: 'Sugerir Menu Exclusivo',
+  btnSelectOccasion: 'Selecione uma ocasião',
+  btnPreparingMenu: 'OkCheff preparando menu exclusivo...',
+  menuTitle: 'Menu Gourmet — {n} pratos',
+  menuNote: '🛒 Lista de compras inclusa · Receitas elaboradas para impressionar',
+  menuNone: 'Nenhuma sugestão disponível',
+  quickQuestion1: 'Dica rápida de culinária',
+  quickQuestion2: 'Substituir ovos em receitas',
+  quickQuestion3: 'Receitas com frango',
+  quickQuestion4: 'Temperos essenciais',
+
   signOutTitle: 'Sair da conta',
   signOutMessage: 'Deseja realmente sair do OkCheff?',
   signOutConfirm: 'Sair',
@@ -466,6 +551,48 @@ const en: Strings = {
   with: 'With',
   portions: 'servings',
   minutes: 'min',
+
+  tabFridge: 'In the Fridge',
+  tabInspiration: 'Inspiration',
+  tabSpecificDish: 'Specific Dish',
+  heroTitleFridge: 'What shall we\ncook today?',
+  heroTitleInspiration: 'What is the\nspecial occasion?',
+  ingredientsTitle: 'Available ingredients',
+  ingredientsSubtitlePremium: 'Add as many ingredients as you like',
+  ingredientsSubtitleFree: 'Up to {max} ingredients on the free plan',
+  ingredientPlaceholder: 'E.g.: chicken, tomato, garlic...',
+  ingredientLimitWarning: 'Free plan limit reached. Upgrade to add more!',
+  filterDiet: 'Diet',
+  filterType: 'Recipe type',
+  filterAll: 'All',
+  filterTraditional: 'Traditional',
+  filterVegetarian: 'Vegetarian',
+  filterVegan: 'Vegan',
+  filterQuick: 'Quick',
+  filterClassic: 'Classic',
+  filterInternational: 'International',
+  filterRegional: 'Regional',
+  filterDessert: 'Dessert',
+  btnGenerate: 'Generate Recipes',
+  btnGenerateAll: 'Browse All Recipes',
+  btnGenerating: 'Generating recipes...',
+  resultsFound: '{n} recipes found',
+  resultsNone: 'No recipes found',
+  resultsWith: 'With: {list}',
+  loadingRecipes: 'OkCheff is creating your recipes... 🧑‍🍳',
+  occasionTitle: 'Vibe / Special Occasion',
+  occasionSubtitle: 'Pick the occasion and OkCheff creates the perfect menu for you',
+  occasionDietFilter: 'Dietary restriction',
+  btnSuggestMenu: 'Suggest Exclusive Menu',
+  btnSelectOccasion: 'Select an occasion',
+  btnPreparingMenu: 'OkCheff preparing exclusive menu...',
+  menuTitle: 'Gourmet Menu — {n} dishes',
+  menuNote: '🛒 Shopping list included · Recipes crafted to impress',
+  menuNone: 'No suggestions available',
+  quickQuestion1: 'Quick cooking tip',
+  quickQuestion2: 'Substitute eggs in recipes',
+  quickQuestion3: 'Recipes with chicken',
+  quickQuestion4: 'Essential spices',
 
   signOutTitle: 'Sign out',
   signOutMessage: 'Do you really want to sign out of OkCheff?',
@@ -624,6 +751,48 @@ const es: Strings = {
   portions: 'porciones',
   minutes: 'min',
 
+  tabFridge: 'En la Nevera',
+  tabInspiration: 'Inspiración',
+  tabSpecificDish: 'Plato Específico',
+  heroTitleFridge: '¿Qué vamos a\ncocinar hoy?',
+  heroTitleInspiration: '¿Cuál es la\nocasión especial?',
+  ingredientsTitle: 'Ingredientes disponibles',
+  ingredientsSubtitlePremium: 'Añade todos los ingredientes que quieras',
+  ingredientsSubtitleFree: 'Hasta {max} ingredientes en el plan gratuito',
+  ingredientPlaceholder: 'Ej: pollo, tomate, ajo...',
+  ingredientLimitWarning: '¡Límite del plan gratuito alcanzado. Haz upgrade para añadir más!',
+  filterDiet: 'Dieta',
+  filterType: 'Tipo de receta',
+  filterAll: 'Todas',
+  filterTraditional: 'Tradicional',
+  filterVegetarian: 'Vegetariana',
+  filterVegan: 'Vegana',
+  filterQuick: 'Rápida',
+  filterClassic: 'Clásica',
+  filterInternational: 'Internacional',
+  filterRegional: 'Regional',
+  filterDessert: 'Postre',
+  btnGenerate: 'Generar Recetas',
+  btnGenerateAll: 'Ver Todas las Recetas',
+  btnGenerating: 'Generando recetas...',
+  resultsFound: '{n} recetas encontradas',
+  resultsNone: 'No se encontraron recetas',
+  resultsWith: 'Con: {list}',
+  loadingRecipes: 'OkCheff está creando tus recetas... 🧑‍🍳',
+  occasionTitle: 'Vibe / Ocasión Especial',
+  occasionSubtitle: 'Elige la ocasión y OkCheff crea el menú perfecto para ti',
+  occasionDietFilter: 'Restricción alimentaria',
+  btnSuggestMenu: 'Sugerir Menú Exclusivo',
+  btnSelectOccasion: 'Selecciona una ocasión',
+  btnPreparingMenu: 'OkCheff preparando menú exclusivo...',
+  menuTitle: 'Menú Gourmet — {n} platos',
+  menuNote: '🛒 Lista de compras incluida · Recetas elaboradas para impresionar',
+  menuNone: 'No hay sugerencias disponibles',
+  quickQuestion1: 'Consejo rápido de cocina',
+  quickQuestion2: 'Sustituir huevos en recetas',
+  quickQuestion3: 'Recetas con pollo',
+  quickQuestion4: 'Especias esenciales',
+
   signOutTitle: 'Cerrar sesión',
   signOutMessage: '¿Realmente deseas cerrar sesión en OkCheff?',
   signOutConfirm: 'Salir',
@@ -780,6 +949,48 @@ const fr: Strings = {
   with: 'Avec',
   portions: 'portions',
   minutes: 'min',
+
+  tabFridge: 'Dans le Frigo',
+  tabInspiration: 'Inspiration',
+  tabSpecificDish: 'Plat Spécifique',
+  heroTitleFridge: 'Qu’allons-nous\ncuisiner aujourd’hui ?',
+  heroTitleInspiration: 'Quelle est\nl’occasion spéciale ?',
+  ingredientsTitle: 'Ingrédients disponibles',
+  ingredientsSubtitlePremium: 'Ajoutez autant d’ingrédients que vous voulez',
+  ingredientsSubtitleFree: 'Jusqu’à {max} ingrédients avec le plan gratuit',
+  ingredientPlaceholder: 'Ex : poulet, tomate, ail...',
+  ingredientLimitWarning: 'Limite du plan gratuit atteinte. Passez à Premium pour en ajouter plus !',
+  filterDiet: 'Régime',
+  filterType: 'Type de recette',
+  filterAll: 'Toutes',
+  filterTraditional: 'Traditionnel',
+  filterVegetarian: 'Végétarien',
+  filterVegan: 'Végan',
+  filterQuick: 'Rapide',
+  filterClassic: 'Classique',
+  filterInternational: 'International',
+  filterRegional: 'Régional',
+  filterDessert: 'Dessert',
+  btnGenerate: 'Générer des Recettes',
+  btnGenerateAll: 'Voir Toutes les Recettes',
+  btnGenerating: 'Génération en cours...',
+  resultsFound: '{n} recettes trouvées',
+  resultsNone: 'Aucune recette trouvée',
+  resultsWith: 'Avec : {list}',
+  loadingRecipes: 'OkCheff crée vos recettes... 🧑‍🍳',
+  occasionTitle: 'Vibe / Occasion Spéciale',
+  occasionSubtitle: 'Choisissez l’occasion et OkCheff crée le menu parfait pour vous',
+  occasionDietFilter: 'Restriction alimentaire',
+  btnSuggestMenu: 'Suggérer un Menu Exclusif',
+  btnSelectOccasion: 'Sélectionnez une occasion',
+  btnPreparingMenu: 'OkCheff prépare votre menu exclusif...',
+  menuTitle: 'Menu Gastronomique — {n} plats',
+  menuNote: '🛒 Liste de courses incluse · Recettes élaborées pour impressionner',
+  menuNone: 'Aucune suggestion disponible',
+  quickQuestion1: 'Astuce cuisine rapide',
+  quickQuestion2: 'Remplacer les œufs en cuisine',
+  quickQuestion3: 'Recettes au poulet',
+  quickQuestion4: 'Épices essentielles',
 
   signOutTitle: 'Se déconnecter',
   signOutMessage: 'Voulez-vous vraiment vous déconnecter de OkCheff?',
