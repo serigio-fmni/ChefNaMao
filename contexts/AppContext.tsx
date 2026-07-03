@@ -2,9 +2,25 @@ import React, { createContext, useState, useEffect, ReactNode } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Session, User } from '@supabase/supabase-js';
+import * as Localization from 'expo-localization';
 import { supabase } from '../lib/supabase';
 import { Recipe, DietType, MealType } from '../constants/data';
 import { Language, setLanguage } from '../constants/i18n';
+
+const SUPPORTED_LANGUAGES: Language[] = ['pt', 'en', 'es', 'fr'];
+
+function detectDeviceLanguage(): Language {
+  try {
+    const locales = Localization.getLocales();
+    const deviceLang = locales?.[0]?.languageCode ?? 'en';
+    if (SUPPORTED_LANGUAGES.includes(deviceLang as Language)) {
+      return deviceLang as Language;
+    }
+  } catch {
+    // silent
+  }
+  return 'en';
+}
 
 export interface UserProfile {
   name: string;
@@ -139,8 +155,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
       ]);
       if (profileData) {
         const parsed: UserProfile = JSON.parse(profileData);
+        // Se ainda não tem idioma salvo, detecta o do celular
+        if (!parsed.language) {
+          parsed.language = detectDeviceLanguage();
+        }
         setProfile(parsed);
-        if (parsed.language) setLanguage(parsed.language);
+        setLanguage(parsed.language);
+      } else {
+        // Primeira abertura: detecta idioma do celular
+        const detectedLang = detectDeviceLanguage();
+        setLanguage(detectedLang);
+        setProfile(prev => ({ ...prev, language: detectedLang }));
       }
       if (recipesData) setSavedRecipes(JSON.parse(recipesData));
       if (eventData) setEventRecipes(JSON.parse(eventData));

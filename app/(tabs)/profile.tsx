@@ -18,7 +18,7 @@ import { Colors, Typography, Spacing, Radius, Shadows } from '../../constants/th
 import { useApp } from '../../hooks/useApp';
 import { DietType, MealType, DIET_LABELS, MEAL_TYPE_LABELS } from '../../constants/data';
 import { VoiceActivator } from '../../components';
-import { LANGUAGE_OPTIONS, Language } from '../../constants/i18n';
+import { LANGUAGE_OPTIONS, Language, useStrings } from '../../constants/i18n';
 
 const DIET_OPTIONS: DietType[] = ['tradicional', 'vegetariana', 'vegana'];
 const MEAL_OPTIONS: MealType[] = ['rapida', 'classica', 'internacional', 'regional'];
@@ -26,6 +26,7 @@ const MEAL_OPTIONS: MealType[] = ['rapida', 'classica', 'internacional', 'region
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const s = useStrings();
   const { profile, updateProfile, savedRecipes, eventRecipes, consumeVoiceEnergy, user, signOut } = useApp();
   const [editingName, setEditingName] = useState(false);
   const [nameInput, setNameInput] = useState(profile.name);
@@ -35,9 +36,9 @@ export default function ProfileScreen() {
     if (Platform.OS === 'web') {
       setShowSignOutAlert(true);
     } else {
-      Alert.alert('Sair da conta', 'Deseja realmente sair do OkCheff?', [
-        { text: 'Cancelar', style: 'cancel' },
-        { text: 'Sair', style: 'destructive', onPress: () => signOut() },
+      Alert.alert(s.signOutTitle, s.signOutMessage, [
+        { text: s.cancel, style: 'cancel' },
+        { text: s.signOutConfirm, style: 'destructive', onPress: () => signOut() },
       ]);
     }
   };
@@ -70,26 +71,27 @@ export default function ProfileScreen() {
         <Modal visible={showSignOutAlert} transparent animationType="fade">
           <View style={styles.modalBackdrop}>
             <View style={styles.modalBox}>
-              <Text style={styles.modalTitle}>Sair da conta</Text>
-              <Text style={styles.modalMessage}>Deseja realmente sair do OkCheff?</Text>
+              <Text style={styles.modalTitle}>{s.signOutTitle}</Text>
+              <Text style={styles.modalMessage}>{s.signOutMessage}</Text>
               <View style={styles.modalButtons}>
                 <TouchableOpacity
                   style={styles.modalCancelButton}
                   onPress={() => setShowSignOutAlert(false)}
                 >
-                  <Text style={styles.modalCancelText}>Cancelar</Text>
+                  <Text style={styles.modalCancelText}>{s.cancel}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.modalConfirmButton}
                   onPress={() => { setShowSignOutAlert(false); signOut(); }}
                 >
-                  <Text style={styles.modalConfirmText}>Sair</Text>
+                  <Text style={styles.modalConfirmText}>{s.signOutConfirm}</Text>
                 </TouchableOpacity>
               </View>
             </View>
           </View>
         </Modal>
       )}
+
       {/* Account section */}
       {user ? (
         <View style={styles.accountCard}>
@@ -97,12 +99,12 @@ export default function ProfileScreen() {
             <MaterialIcons name="verified-user" size={18} color={Colors.success} />
             <View>
               <Text style={styles.accountEmail} numberOfLines={1}>{user.email}</Text>
-              <Text style={styles.accountStatus}>Conta conectada</Text>
+              <Text style={styles.accountStatus}>{s.accountConnected}</Text>
             </View>
           </View>
           <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut} activeOpacity={0.8}>
             <MaterialIcons name="logout" size={16} color={Colors.error} />
-            <Text style={styles.signOutText}>Sair</Text>
+            <Text style={styles.signOutText}>{s.signOutConfirm}</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -113,8 +115,8 @@ export default function ProfileScreen() {
         >
           <MaterialIcons name="login" size={20} color={Colors.primary} />
           <View style={styles.signInInfo}>
-            <Text style={styles.signInTitle}>Entrar / Criar conta</Text>
-            <Text style={styles.signInSubtitle}>Sincronize receitas e use a IA real</Text>
+            <Text style={styles.signInTitle}>{s.signInTitle}</Text>
+            <Text style={styles.signInSubtitle}>{s.signInSubtitle}</Text>
           </View>
           <MaterialIcons name="chevron-right" size={20} color={Colors.textSubtle} />
         </TouchableOpacity>
@@ -164,7 +166,7 @@ export default function ProfileScreen() {
                 { color: profile.isPremium ? Colors.text : Colors.textSubtle },
               ]}
             >
-              {profile.isPremium ? 'Plano Premium' : 'Plano Gratuito'}
+              {profile.isPremium ? s.profilePlanPremium : s.profilePlanFree}
             </Text>
           </View>
         </View>
@@ -174,23 +176,23 @@ export default function ProfileScreen() {
       <View style={styles.statsRow}>
         <View style={styles.statCard}>
           <Text style={styles.statValue}>{savedRecipes.length}</Text>
-          <Text style={styles.statLabel}>Receitas{'\n'}Salvas</Text>
+          <Text style={styles.statLabel}>{s.statRecipes}</Text>
         </View>
         <View style={styles.statDivider} />
         <View style={styles.statCard}>
           <Text style={styles.statValue}>{eventRecipes.length}</Text>
-          <Text style={styles.statLabel}>Meus{'\n'}Eventos</Text>
+          <Text style={styles.statLabel}>{s.statEvents}</Text>
         </View>
         <View style={styles.statDivider} />
         <View style={styles.statCard}>
           <Text style={styles.statValue}>{profile.isPremium ? '∞' : '3'}</Text>
-          <Text style={styles.statLabel}>Ingredientes{'\n'}Grátis</Text>
+          <Text style={styles.statLabel}>{s.statIngredients}</Text>
         </View>
       </View>
 
       {/* Premium toggle */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Plano de Assinatura</Text>
+        <Text style={styles.sectionTitle}>{s.profileSubscriptionPlan}</Text>
         <View style={styles.premiumCard}>
           <View style={styles.premiumLeft}>
             <View style={styles.premiumIcon}>
@@ -198,10 +200,10 @@ export default function ProfileScreen() {
             </View>
             <View>
               <Text style={styles.premiumTitle}>
-                {profile.isPremium ? 'Premium Ativo' : 'Ativar Premium'}
+                {profile.isPremium ? s.profilePremiumActive : s.profileActivatePremium}
               </Text>
               <Text style={styles.premiumDescription}>
-                Ingredientes ilimitados, voz, todas as dietas
+                {s.profilePremiumDesc}
               </Text>
             </View>
           </View>
@@ -215,14 +217,7 @@ export default function ProfileScreen() {
 
         {!profile.isPremium && (
           <View style={styles.featuresList}>
-            {[
-              'Ingredientes ilimitados na busca',
-              'Caderno digital ilimitado',
-              'Modo Mãos Livres com voz',
-              'Comando "Ok Cheff"',
-              'Todas as dietas e cozinhas',
-              'Acesso offline total',
-            ].map(feat => (
+            {s.profileFeatures.map(feat => (
               <View key={feat} style={styles.featureItem}>
                 <MaterialIcons name="check-circle" size={16} color={Colors.success} />
                 <Text style={styles.featureText}>{feat}</Text>
@@ -234,7 +229,7 @@ export default function ProfileScreen() {
 
       {/* Diet preference */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Dieta</Text>
+        <Text style={styles.sectionTitle}>{s.profileDiet}</Text>
         <View style={styles.optionsRow}>
           {DIET_OPTIONS.map(diet => (
             <TouchableOpacity
@@ -257,7 +252,7 @@ export default function ProfileScreen() {
 
       {/* Meal preferences */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Preferências Culinárias</Text>
+        <Text style={styles.sectionTitle}>{s.profilePreferences}</Text>
         <View style={styles.optionsRow}>
           {MEAL_OPTIONS.map(meal => (
             <TouchableOpacity
@@ -283,7 +278,7 @@ export default function ProfileScreen() {
 
       {/* Voice mode section */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Modo Mãos Livres — Ok Cheff</Text>
+        <Text style={styles.sectionTitle}>{s.profileVoiceMode} — Ok Cheff</Text>
         <VoiceActivator
           isPremium={profile.isPremium}
           energyLevel={profile.voiceEnergy / 100}
@@ -292,9 +287,9 @@ export default function ProfileScreen() {
         {profile.isPremium && (
           <View style={styles.voiceFeatures}>
             {[
-              { icon: 'hearing', label: 'Ativação por voz "Ok Cheff"' },
-              { icon: 'record-voice-over', label: 'Text-to-Speech para receitas' },
-              { icon: 'mic-none', label: 'Speech-to-Text para dúvidas' },
+              { icon: 'hearing', label: s.voiceFeatureActivation },
+              { icon: 'record-voice-over', label: s.voiceFeatureTTS },
+              { icon: 'mic-none', label: s.voiceFeatureSTT },
             ].map(item => (
               <View key={item.label} style={styles.voiceFeatureItem}>
                 <MaterialIcons name={item.icon as any} size={14} color={Colors.primary} />
@@ -307,7 +302,7 @@ export default function ProfileScreen() {
 
       {/* Language selector */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Idioma / Language</Text>
+        <Text style={styles.sectionTitle}>{s.profileLanguageTitle}</Text>
         <View style={styles.languageGrid}>
           {LANGUAGE_OPTIONS.map(lang => {
             const isActive = profile.language === lang.value;

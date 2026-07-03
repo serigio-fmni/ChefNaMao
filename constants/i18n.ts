@@ -151,6 +151,22 @@ export interface Strings {
   with: string;
   portions: string;
   minutes: string;
+
+  // Profile — strings extras
+  signOutTitle: string;
+  signOutMessage: string;
+  signOutConfirm: string;
+  accountConnected: string;
+  signInTitle: string;
+  signInSubtitle: string;
+  statRecipes: string;
+  statEvents: string;
+  statIngredients: string;
+  profileSubscriptionPlan: string;
+  profileLanguageTitle: string;
+  voiceFeatureActivation: string;
+  voiceFeatureTTS: string;
+  voiceFeatureSTT: string;
 }
 
 const pt: Strings = {
@@ -293,6 +309,21 @@ const pt: Strings = {
   with: 'Com',
   portions: 'porções',
   minutes: 'min',
+
+  signOutTitle: 'Sair da conta',
+  signOutMessage: 'Deseja realmente sair do OkCheff?',
+  signOutConfirm: 'Sair',
+  accountConnected: 'Conta conectada',
+  signInTitle: 'Entrar / Criar conta',
+  signInSubtitle: 'Sincronize receitas e use a IA real',
+  statRecipes: 'Receitas\nSalvas',
+  statEvents: 'Meus\nEventos',
+  statIngredients: 'Ingredientes\nGrátis',
+  profileSubscriptionPlan: 'Plano de Assinatura',
+  profileLanguageTitle: 'Idioma / Language',
+  voiceFeatureActivation: 'Ativação por voz "Ok Cheff"',
+  voiceFeatureTTS: 'Text-to-Speech para receitas',
+  voiceFeatureSTT: 'Speech-to-Text para dúvidas',
 };
 
 const en: Strings = {
@@ -435,6 +466,21 @@ const en: Strings = {
   with: 'With',
   portions: 'servings',
   minutes: 'min',
+
+  signOutTitle: 'Sign out',
+  signOutMessage: 'Do you really want to sign out of OkCheff?',
+  signOutConfirm: 'Sign out',
+  accountConnected: 'Account connected',
+  signInTitle: 'Sign in / Create account',
+  signInSubtitle: 'Sync recipes and use the real AI',
+  statRecipes: 'Saved\nRecipes',
+  statEvents: 'My\nEvents',
+  statIngredients: 'Free\nIngredients',
+  profileSubscriptionPlan: 'Subscription Plan',
+  profileLanguageTitle: 'Language',
+  voiceFeatureActivation: '"Ok Cheff" voice activation',
+  voiceFeatureTTS: 'Text-to-Speech for recipes',
+  voiceFeatureSTT: 'Speech-to-Text for questions',
 };
 
 const es: Strings = {
@@ -577,6 +623,21 @@ const es: Strings = {
   with: 'Con',
   portions: 'porciones',
   minutes: 'min',
+
+  signOutTitle: 'Cerrar sesión',
+  signOutMessage: '¿Realmente deseas cerrar sesión en OkCheff?',
+  signOutConfirm: 'Salir',
+  accountConnected: 'Cuenta conectada',
+  signInTitle: 'Iniciar sesión / Crear cuenta',
+  signInSubtitle: 'Sincroniza recetas y usa la IA real',
+  statRecipes: 'Recetas\nGuardadas',
+  statEvents: 'Mis\nEventos',
+  statIngredients: 'Ingredientes\nGratis',
+  profileSubscriptionPlan: 'Plan de Suscripción',
+  profileLanguageTitle: 'Idioma',
+  voiceFeatureActivation: 'Activación por voz "Ok Cheff"',
+  voiceFeatureTTS: 'Text-to-Speech para recetas',
+  voiceFeatureSTT: 'Speech-to-Text para preguntas',
 };
 
 const fr: Strings = {
@@ -719,6 +780,21 @@ const fr: Strings = {
   with: 'Avec',
   portions: 'portions',
   minutes: 'min',
+
+  signOutTitle: 'Se déconnecter',
+  signOutMessage: 'Voulez-vous vraiment vous déconnecter de OkCheff?',
+  signOutConfirm: 'Déconnexion',
+  accountConnected: 'Compte connecté',
+  signInTitle: 'Se connecter / Créer un compte',
+  signInSubtitle: 'Synchronisez vos recettes et utilisez la vraie IA',
+  statRecipes: 'Recettes\nSauvegardées',
+  statEvents: 'Mes\nÉvénements',
+  statIngredients: 'Ingrédients\nGratuits',
+  profileSubscriptionPlan: 'Plan d\'Abonnement',
+  profileLanguageTitle: 'Langue',
+  voiceFeatureActivation: 'Activation vocale "Ok Cheff"',
+  voiceFeatureTTS: 'Synthèse vocale pour les recettes',
+  voiceFeatureSTT: 'Reconnaissance vocale pour les questions',
 };
 
 const it: Strings = {
