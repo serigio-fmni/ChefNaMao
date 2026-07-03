@@ -16,7 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Colors, Typography, Spacing, Radius, Shadows } from '../../constants/theme';
 import { useApp } from '../../hooks/useApp';
-import { generateRecipes, generateInspirationMenu } from '../../services/recipeService';
+import { generateRecipes, generateMoreRecipes, generateInspirationMenu } from '../../services/recipeService';
 import { RecipeCard, IngredientChip, EventRecipeCard } from '../../components';
 import {
   Recipe,
@@ -42,6 +42,8 @@ export default function HomeScreen() {
   const [ingredientInput, setIngredientInput] = useState('');
   const [ingredients, setIngredients] = useState<string[]>([]);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const [lastFilters, setLastFilters] = useState<any>(null);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   const [selectedOccasion, setSelectedOccasion] = useState<EventOccasion | null>(null);
   const [inspirationRecipes, setInspirationRecipes] = useState<Recipe[]>([]);
@@ -84,12 +86,9 @@ export default function HomeScreen() {
     setIsLoading(true);
     setHasSearched(true);
     try {
-      const results = await generateRecipes({
-        ingredients,
-        diet: selectedDiet,
-        mealType: selectedMealType,
-        isPremium: profile.isPremium,
-      });
+      const filters = { ingredients, diet: selectedDiet, mealType: selectedMealType, isPremium: profile.isPremium };
+      setLastFilters(filters);
+      const results = await generateRecipes(filters);
       setRecipes(results);
     } catch (e) {
       setRecipes([]);
@@ -334,6 +333,30 @@ export default function HomeScreen() {
                 {recipes.map(recipe => (
                   <RecipeCard key={recipe.id} recipe={recipe} onPress={() => router.push(`/recipe/${recipe.id}`)} />
                 ))}
+                {recipes.length > 0 && (
+                  <TouchableOpacity
+                    style={styles.loadMoreBtn}
+                    onPress={async () => {
+                      if (!lastFilters || loadingMore) return;
+                      setLoadingMore(true);
+                      try {
+                        const more = await generateMoreRecipes(lastFilters, recipes.length);
+                        if (more.length > 0) setRecipes(prev => [...prev, ...more]);
+                      } catch {}
+                      setLoadingMore(false);
+                    }}
+                    disabled={loadingMore}
+                    activeOpacity={0.8}
+                  >
+                    {loadingMore
+                      ? <ActivityIndicator size="small" color={Colors.primary} />
+                      : <>
+                          <MaterialIcons name="add" size={18} color={Colors.primary} />
+                          <Text style={styles.loadMoreText}>Ver mais receitas</Text>
+                        </>
+                    }
+                  </TouchableOpacity>
+                )}
               </View>
             )}
           </>
@@ -508,4 +531,6 @@ const styles = StyleSheet.create({
   inspirationNote: { fontSize: Typography.sizes.sm, color: Colors.textSubtle, marginBottom: Spacing.base, lineHeight: 20 },
   heroSearchBtn: { position: 'absolute', top: 12, right: Spacing.base, flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(255,255,255,0.18)', borderRadius: Radius.full, paddingVertical: 7, paddingHorizontal: 14, borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)' },
   heroSearchText: { fontSize: Typography.sizes.sm, fontWeight: Typography.weights.semibold, color: Colors.textInverse },
+  loadMoreBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.sm, backgroundColor: Colors.surface, borderRadius: Radius.lg, paddingVertical: Spacing.md, marginBottom: Spacing.xl, borderWidth: 1.5, borderColor: Colors.primary + '40' },
+  loadMoreText: { fontSize: Typography.sizes.base, fontWeight: Typography.weights.semibold, color: Colors.primary },
 });

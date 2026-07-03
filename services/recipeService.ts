@@ -87,6 +87,27 @@ export async function generateRecipes(filters: RecipeFilters): Promise<Recipe[]>
   return MOCK_RECIPES.filter(r => !r.isPremium || filters.isPremium).slice(0, 5);
 }
 
+// Retorna mais cards para uma busca existente (botao Ver mais)
+export async function generateMoreRecipes(filters: RecipeFilters, offset: number): Promise<Recipe[]> {
+  try {
+    const result = await callEdgeFunction({
+      mode: 'search',
+      ingredients: filters.ingredients,
+      diet: filters.diet ?? 'todas',
+      mealType: filters.mealType ?? 'todas',
+      dishName: filters.dishName ?? null,
+      language: 'pt',
+      offset,
+    });
+    if (result?.recipes && result.recipes.length > 0) {
+      return result.recipes.map(mapDBToRecipe);
+    }
+  } catch (e) {
+    console.warn('Edge Function error:', e);
+  }
+  return [];
+}
+
 export async function generateInspirationMenu(filters: InspirationFilters): Promise<Recipe[]> {
   try {
     const result = await callEdgeFunction({
