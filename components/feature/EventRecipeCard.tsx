@@ -1,19 +1,11 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Animated,
-  Alert,
-} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { Image } from 'expo-image';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Recipe, EVENT_OCCASION_LABELS } from '../../constants/data';
 import { Colors, Typography, Spacing, Radius, Shadows } from '../../constants/theme';
 import { useApp } from '../../hooks/useApp';
-import { ShoppingChecklist } from './ShoppingChecklist';
-import { substituteIngredients } from '../../services/recipeService';
+import { cleanIngredient } from '../../lib/cleanIngredient';
 
 interface EventRecipeCardProps {
   recipe: Recipe;
@@ -32,30 +24,30 @@ const DIFFICULTY_COLORS: Record<string, string> = {
 };
 
 export function EventRecipeCard({ recipe: initialRecipe, onStartCooking }: EventRecipeCardProps) {
-  const { isEventRecipeSaved, saveEventRecipe, removeEventRecipe } = useApp();
-  const [recipe, setRecipe] = useState(initialRecipe);
-  const [expanded, setExpanded] = useState(false);
-  const [shoppingDone, setShoppingDone] = useState(false);
-  const [substituting, setSubstituting] = useState(false);
+  const { isEventRecipeSaved, saveEventRecipe, saveRecipe, isRecipeSaved } = useApp();
+  const [recipe] = useState(initialRecipe);
+  const [unlocking, setUnlocking] = useState(false);
 
-  const handleSubstitute = async (missingNames: string[]) => {
-    setSubstituting(true);
-    const result = await substituteIngredients(recipe, missingNames);
-    setSubstituting(false);
-    if (result) {
-      setRecipe(result.recipe);
-      Alert.alert('Receita ajustada', result.note || 'Os ingredientes foram trocados.');
-    } else {
-      Alert.alert('Ops', 'Não consegui trocar agora. Tente novamente.');
-    }
-  };
+  const saved = isEventRecipeSaved(recipe.id) || isRecipeSaved(recipe.id);
 
-  const saved = isEventRecipeSaved(recipe.id);
-
+  // Salva a ideia no Caderno (grátis, sem crédito)
   const handleSave = () => {
-    if (saved) removeEventRecipe(recipe.id);
-    else saveEventRecipe(recipe);
+    if (saved) return;
+    saveRecipe(recipe);
+    Alert.alert('Salvo!', 'Receita salva no seu Caderno.');
   };
+
+  // Desbloqueia e abre a receita (por enquanto todos têm acesso liberado)
+  const handleWantThis = () => {
+    setUnlocking(true);
+    if (!saved) saveRecipe(recipe);
+    setUnlocking(false);
+    if (onStartCooking) onStartCooking();
+  };
+
+  const ingredientNames = (recipe.ingredients || [])
+    .map(cleanIngredient)
+    .filter(Boolean);
 
   return (
     <View style={styles.card}>
@@ -84,22 +76,8 @@ export function EventRecipeCard({ recipe: initialRecipe, onStartCooking }: Event
 
       {/* Content */}
       <View style={styles.content}>
-        {/* Title row */}
-        <View style={styles.titleRow}>
-          <Text style={styles.name} numberOfLines={2}>{recipe.name}</Text>
-          <TouchableOpacity
-            onPress={handleSave}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <MaterialIcons
-              name={saved ? 'bookmark' : 'bookmark-border'}
-              size={24}
-              color={saved ? Colors.primary : Colors.textSubtle}
-            />
-          </TouchableOpacity>
-        </View>
-
-        <Text style={styles.description} numberOfLines={2}>{recipe.description}</Text>
+        <Text style={styles.name} numberOfLines={2}>{recipe.name}</Text>
+        <Text style={styles.description} numberOfLines={3}>{recipe.description}</Text>
 
         {/* Meta */}
         <View style={styles.meta}>
@@ -128,88 +106,43 @@ export function EventRecipeCard({ recipe: initialRecipe, onStartCooking }: Event
           </View>
         </View>
 
-        {/* Ingredientes principais */}
-        {recipe.ingredients && recipe.ingredients.length > 0 && (
-          <View style={styles.ingredientsSection}>
-            <View style={styles.ingredientsHeader}>
-              <MaterialIcons name="kitchen" size={13} color={Colors.textSubtle} />
-              <Text style={styles.ingredientsLabel}>Ingredientes principais:</Text>
-            </View>
-            <Text style={styles.ingredientsListText} numberOfLines={2}>
-              {recipe.ingredients.slice(0, 5).join(' · ')}
-              {recipe.ingredients.length > 5 ? ` +${recipe.ingredients.length - 5} mais` : ''}
-            </Text>
-          </View>
-        )}
-
-        {/* Shopping list toggle */}
-        {recipe.shoppingList && recipe.shoppingList.length > 0 && (
-          <>
-            <TouchableOpacity
-              style={styles.toggleButton}
-              onPress={() => setExpanded(e => !e)}
-              activeOpacity={0.8}
-            >
-              <MaterialIcons name="shopping-cart" size={16} color={Colors.primary} />
-              <Text style={styles.toggleText}>
-                {expanded ? 'Ocultar' : 'Ver'} Lista de Compras ({recipe.shoppingList.length} itens)
-              </Text>
-              <MaterialIcons
-                name={expanded ? 'keyboard-arrow-up' : 'keyboard-arrow-down'}
-                size={18}
-                color={Colors.primary}
-              />
-            </TouchableOpacity>
-
-            {expanded && (
-              <ShoppingChecklist
-                items={recipe.shoppingList}
-                onAllChecked={() => setShoppingDone(true)}
-                onSubstitute={handleSubstitute}
-                substituting={substituting}
-              />
-            )}
-          </>
-        )}
-
-        {/* Iniciar Preparo CTA */}
-        <TouchableOpacity
-          style={[
-            styles.startButton,
-            !shoppingDone && recipe.shoppingList && recipe.shoppingList.length > 0
-              ? styles.startButtonDisabled
-              : styles.startButtonActive,
-          ]}
-          onPress={onStartCooking}
-          disabled={
-            !shoppingDone &&
-            recipe.shoppingList !== undefined &&
-            recipe.shoppingList.length > 0
-          }
-          activeOpacity={0.85}
-        >
-          <MaterialIcons
-            name="play-circle-filled"
-            size={20}
-            color={
-              !shoppingDone && recipe.shoppingList && recipe.shoppingList.length > 0
-                ? Colors.textSubtle
-                : Colors.textInverse
-            }
-          />
-          <Text
-            style={[
-              styles.startButtonText,
-              !shoppingDone && recipe.shoppingList && recipe.shoppingList.length > 0
-                ? styles.startButtonTextDisabled
-                : styles.startButtonTextActive,
-            ]}
-          >
-            {!shoppingDone && recipe.shoppingList && recipe.shoppingList.length > 0
-              ? 'Confira a lista de compras primeiro'
-              : 'Iniciar Preparo com OkCheff'}
+        {/* Ingredientes sem quantidade */}
+        {ingredientNames.length > 0 && (
+          <Text style={styles.ingredientsList}>
+            {ingredientNames.join('  ·  ')}
           </Text>
-        </TouchableOpacity>
+        )}
+
+        {/* Botões */}
+        <View style={styles.buttonsRow}>
+          <TouchableOpacity
+            style={styles.btnSave}
+            onPress={handleSave}
+            disabled={saved}
+            activeOpacity={0.85}
+          >
+            <MaterialIcons
+              name={saved ? 'bookmark' : 'bookmark-border'}
+              size={16}
+              color={saved ? Colors.textSubtle : Colors.primary}
+            />
+            <Text style={[styles.btnSaveText, saved && { color: Colors.textSubtle }]}>
+              {saved ? 'Salvo' : 'Salvar'}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.btnWant}
+            onPress={handleWantThis}
+            disabled={unlocking}
+            activeOpacity={0.85}
+          >
+            <MaterialIcons name="bolt" size={16} color={Colors.textInverse} />
+            <Text style={styles.btnWantText}>
+              {unlocking ? 'Abrindo...' : 'Quero essa!'}
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </View>
   );
@@ -268,14 +201,7 @@ const styles = StyleSheet.create({
     padding: Spacing.base,
     gap: Spacing.md,
   },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    gap: Spacing.sm,
-  },
   name: {
-    flex: 1,
     fontSize: Typography.sizes.lg,
     fontWeight: Typography.weights.bold,
     color: Colors.text,
@@ -311,71 +237,48 @@ const styles = StyleSheet.create({
     fontSize: Typography.sizes.xs,
     fontWeight: Typography.weights.semibold,
   },
-  toggleButton: {
+  ingredientsList: {
+    fontSize: Typography.sizes.sm,
+    color: Colors.textSubtle,
+    lineHeight: 20,
+    fontStyle: 'italic',
+  },
+  buttonsRow: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+    marginTop: Spacing.xs,
+  },
+  btnSave: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.sm,
-    backgroundColor: Colors.primary + '12',
+    justifyContent: 'center',
+    gap: 6,
     borderRadius: Radius.md,
-    padding: Spacing.md,
-    borderWidth: 1,
-    borderColor: Colors.primary + '30',
+    paddingVertical: Spacing.md,
+    borderWidth: 1.5,
+    borderColor: Colors.primary,
+    backgroundColor: Colors.surface,
   },
-  toggleText: {
-    flex: 1,
+  btnSaveText: {
     fontSize: Typography.sizes.sm,
     fontWeight: Typography.weights.semibold,
     color: Colors.primary,
   },
-  ingredientsSection: {
-    backgroundColor: Colors.background,
-    borderRadius: Radius.md,
-    padding: Spacing.sm,
-    gap: 4,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  ingredientsHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  ingredientsLabel: {
-    fontSize: Typography.sizes.xs,
-    color: Colors.textSubtle,
-    fontWeight: Typography.weights.semibold,
-  },
-  ingredientsListText: {
-    fontSize: Typography.sizes.xs,
-    color: Colors.textSecondary,
-    lineHeight: 18,
-  },
-  startButton: {
+  btnWant: {
+    flex: 2,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: Spacing.sm,
+    gap: 6,
     borderRadius: Radius.md,
     paddingVertical: Spacing.md,
-    paddingHorizontal: Spacing.xl,
-  },
-  startButtonActive: {
     backgroundColor: Colors.primary,
     ...Shadows.sm,
   },
-  startButtonDisabled: {
-    backgroundColor: Colors.surfaceDark,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  startButtonText: {
+  btnWantText: {
     fontSize: Typography.sizes.base,
     fontWeight: Typography.weights.bold,
-  },
-  startButtonTextActive: {
     color: Colors.textInverse,
-  },
-  startButtonTextDisabled: {
-    color: Colors.textSubtle,
   },
 });

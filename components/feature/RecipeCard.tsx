@@ -6,7 +6,7 @@ import { Recipe } from '../../constants/data';
 import { Colors, Typography, Spacing, Radius, Shadows } from '../../constants/theme';
 import { useApp } from '../../hooks/useApp';
 import { useStrings } from '../../constants/i18n';
-import { unlockRecipe } from '../../services/recipeService';
+import { cleanIngredient } from '../../lib/cleanIngredient';
 
 interface RecipeCardProps {
   recipe: Recipe;
@@ -72,16 +72,7 @@ export function RecipeCard({ recipe: initialRecipe, onPress, compact = false }: 
 
   // Mostra todos os ingredientes sem quantidade
   const ingredientNames = (recipe.ingredients || [])
-    .map((ing: string) => {
-      // Remove medidas do início: "2 xícaras de farinha" → "farinha"
-      // Remove padrões como "1", "1/2", "de ", "xícara de ", etc.
-      return ing
-        .replace(/^[\d½¼¾⅓⅔\s\/,\.]+/, '') // remove números do início
-        .replace(/^(de |do |da |dos |das |um |uma |uns |umas )/i, '') // remove artigos
-        .replace(/^(colher|xícara|copo|pitada|fatia|dente|folha|ramo|fio|punhado|tablete|lata|pacote|sachê|unidade|pedaço|kg|g|ml|l|mg)s?\s+(de\s+)?/i, '') // remove medidas
-        .replace(/^(de |do |da |dos |das )/i, '') // remove artigos restantes
-        .trim();
-    })
+    .map(cleanIngredient)
     .filter(Boolean);
 
   if (compact) {
